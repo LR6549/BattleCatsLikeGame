@@ -21,7 +21,8 @@ std::string path = fs::current_path().string() + "/";
 SDL_Window*     window = nullptr;
 SDL_Renderer*   renderer = nullptr;
 SDL_Texture*    renderTexture = nullptr;
-MIX_Mixer*      mixer = nullptr;
+MIX_Mixer*      musicMixer = nullptr;
+MIX_Mixer*      soundMixer = nullptr;
 MIX_Track*      musicTrack = nullptr;
 
 //* Window Configs
@@ -42,6 +43,7 @@ enum class STATE {
     NONE,
     TITLESCREEN,
     MAINMENU,
+    SETTINGS,
     LOADOUTSELECT,
     UPGRADEUNIT,
     WORLDSELECT,
@@ -72,7 +74,7 @@ std::string logTypeToColor(LOGTYPE type) {
         case LOGTYPE::NONE:    return "\033[0m";
         case LOGTYPE::ERROR:   return "\033[91;1;4m";
         case LOGTYPE::WARNING: return "\033[33;1;4m";
-        case LOGTYPE::INFO:    return "\033[94;1;4m";
+        case LOGTYPE::INFO:    return "\033[93;1;4m";
         case LOGTYPE::SUCCESS: return "\033[92;1;4m";
     }
     return "\033[0m";
@@ -116,7 +118,7 @@ int loadMusic() {
             log("Music:", (tempName + " in " + tempPath), LOGTYPE::INFO);
             
             //* Load Audio from file (not streamed)
-            MIX_Audio* audio = MIX_LoadAudio(mixer, tempPath.c_str(), false);
+            MIX_Audio* audio = MIX_LoadAudio(musicMixer, tempPath.c_str(), false);
             if (!audio) {
                 log("Failed to load music from: ", (tempPath + "; " + SDL_GetError()), LOGTYPE::ERROR);
                 continue;
@@ -147,7 +149,7 @@ int loadSounds() {
             log("Sound: ", (tempName + " in " + tempPath), LOGTYPE::INFO);
             
             //* Load Audio from file (not streamed)
-            MIX_Audio* audio = MIX_LoadAudio(mixer, tempPath.c_str(), false);
+            MIX_Audio* audio = MIX_LoadAudio(musicMixer, tempPath.c_str(), false);
             if (!audio) {
                 log("Failed to load sound from: ", (tempPath + "; " + SDL_GetError()), LOGTYPE::ERROR);
                 continue;
@@ -192,6 +194,14 @@ int loadTextures() {
     return 0;
 }
 
+//* Updates the music and sound mixer gain based on the settings
+void updateMixerGain() {
+    //* Updating music Mixer Gain
+    MIX_SetMasterGain(musicMixer, settings["volume"]["music"].get<int>()/100.0f);
+    //* Updating sound Mixer Gain
+    MIX_SetMasterGain(soundMixer, settings["volume"]["sfx"].get<int>()/100.0f);
+}
+
 //* Play a sound effect by name
 void playSound(const std::string& soundName) {
     //* check if sound Exists
@@ -202,7 +212,7 @@ void playSound(const std::string& soundName) {
     }
     MIX_Audio* audio = it->second;
 
-    if (!MIX_PlayAudio(mixer, audio)) {
+    if (!MIX_PlayAudio(soundMixer, audio)) {
         log("Played sound: ", soundName.c_str());
     } else {
         log("MIX_PlayAudio failed: ", SDL_GetError());
@@ -231,12 +241,20 @@ static void playMusic(std::string musicName) {
         return;
     }
 
+    //* assign audio to track
+    MIX_SetTrackAudio(musicTrack, audio);
+
     //* Loop infinitely by default
     SDL_PropertiesID options = SDL_CreateProperties();
     SDL_SetNumberProperty(options, MIX_PROP_PLAY_LOOPS_NUMBER, -1);
     SDL_SetNumberProperty(options, MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, 2000);
-    if (!MIX_PlayTrack(musicTrack, options)) {
-        log("Playing music: ", musicName, LOGTYPE::SUCCESS);
+
+    if (MIX_PlayTrack(musicTrack, options)) {
+        if (MIX_TrackPlaying(musicTrack)) {
+            log("Playing music: ", musicName, LOGTYPE::SUCCESS);
+        } else {
+            log("Track Not Playing: ", SDL_GetError(), LOGTYPE::ERROR);
+        }
     } else {
         log("MIX_PlayTrack failed: ", SDL_GetError(), LOGTYPE::ERROR);
     }
@@ -249,6 +267,7 @@ void initState() {
         switch (currentState) {
             case STATE::TITLESCREEN: {
                 playMusic("baseTheme");
+                // TODO: title screen logic
                 break;
             }
             case STATE::MAINMENU: {
@@ -311,6 +330,59 @@ void initState() {
 //* Update function (game logic per frame)
 void update(int deltaTime) {
     initState();
+    updateMixerGain(); //! change to only when volume settings touched
+
+    switch (currentState) {
+        case STATE::TITLESCREEN: {
+            // TODO: title screen logic
+            break;
+        }
+        case STATE::MAINMENU: {
+            // TODO: main menu logic
+            break;
+        }
+        case STATE::LOADOUTSELECT: {
+            // TODO: loadout select logic
+            break;
+        }
+        case STATE::UPGRADEUNIT: {
+            // TODO: upgrade unit logic
+            break;
+        }
+        case STATE::WORLDSELECT: {
+            // TODO: world select logic
+            break;
+        }
+        case STATE::LEVELSELECT: {
+            // TODO: level select logic
+            break;
+        }
+        case STATE::LEVELPLAY: {
+            // TODO: level play logic
+            break;
+        }
+        case STATE::BANNERSELECT: {
+            // TODO: banner select logic
+            break;
+        }
+        case STATE::ROLLBANNER: {
+            playMusic("Silent");
+            // TODO: roll banner logic
+            break;
+        }
+        case STATE::STORAGEUNITS: {
+            // TODO: storage units logic
+            break;
+        }
+        case STATE::STORAGEMATERIAL: {
+            // TODO: storage material logic
+            break;
+        }
+        default: {
+            // Optional: handle unknown/invalid state
+            break;
+        }
+    }
 }
 
 //* Draw a texture by name at given coordinates
@@ -344,20 +416,153 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0) {
 //* Render function (main drawing function for a frame)
 void render() {
     drawTexture("mainMenuBackground");
+
+
+    if (isPaused) {
+        drawTexture("PAUSED");
+    }
 }
 
 //* Handle keyboard input events
 void handleKeyboardInput(const SDL_KeyboardEvent& key) {
-    if (key.key == SDLK_ESCAPE) {
-        SDL_Event e;
-        e.type = SDL_EVENT_QUIT;
-        SDL_PushEvent(&e);
+    switch (currentState) {
+        case STATE::TITLESCREEN: {
+            // TODO: title screen logic
+            if (key.key == SDLK_ESCAPE) {
+                SDL_Event e;
+                e.type = SDL_EVENT_QUIT;
+                SDL_PushEvent(&e);
+            }
+            break;
+        }
+        case STATE::MAINMENU: {
+            // TODO: main menu logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::TITLESCREEN;
+            }
+            break;
+        }
+        case STATE::LOADOUTSELECT: {
+            // TODO: loadout select logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::MAINMENU;
+            }
+            break;
+        }
+        case STATE::UPGRADEUNIT: {
+            // TODO: upgrade unit logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::MAINMENU;
+            }
+            break;
+        }
+        case STATE::WORLDSELECT: {
+            // TODO: world select logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::MAINMENU;
+            }
+            break;
+        }
+        case STATE::LEVELSELECT: {
+            // TODO: level select logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::WORLDSELECT;
+            }
+            break;
+        }
+        case STATE::LEVELPLAY: {
+            // TODO: level play logic
+            
+            if (key.key == SDLK_ESCAPE) {
+                isPaused = !isPaused;
+            }
+            break;
+        }
+        case STATE::BANNERSELECT: {
+            // TODO: banner select logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::MAINMENU;
+            }
+            break;
+        }
+        case STATE::ROLLBANNER: {
+            // TODO: roll banner logic
+            break;
+        }
+        case STATE::STORAGEUNITS: {
+            // TODO: storage units logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::MAINMENU;
+            }
+            break;
+        }
+        case STATE::STORAGEMATERIAL: {
+            // TODO: storage material logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::MAINMENU;
+            }
+            break;
+        }
+        default: {
+            // Optional: handle unknown/invalid state
+            break;
+        }
     }
     log("Pressed: ", SDL_GetScancodeName(key.scancode), LOGTYPE::INFO);
 }
 
 //* Handle mouse input events
 void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
+    switch (currentState) {
+        case STATE::TITLESCREEN: {
+            // TODO: title screen logic
+            break;
+        }
+        case STATE::MAINMENU: {
+            // TODO: main menu logic
+            break;
+        }
+        case STATE::LOADOUTSELECT: {
+            // TODO: loadout select logic
+            break;
+        }
+        case STATE::UPGRADEUNIT: {
+            // TODO: upgrade unit logic
+            break;
+        }
+        case STATE::WORLDSELECT: {
+            // TODO: world select logic
+            break;
+        }
+        case STATE::LEVELSELECT: {
+            // TODO: level select logic
+            break;
+        }
+        case STATE::LEVELPLAY: {
+            // TODO: level play logic
+            break;
+        }
+        case STATE::BANNERSELECT: {
+            // TODO: banner select logic
+            break;
+        }
+        case STATE::ROLLBANNER: {
+            // TODO: roll banner logic
+            break;
+        }
+        case STATE::STORAGEUNITS: {
+            // TODO: storage units logic
+            break;
+        }
+        case STATE::STORAGEMATERIAL: {
+            // TODO: storage material logic
+            break;
+        }
+        default: {
+            // Optional: handle unknown/invalid state
+            break;
+        }
+    }
     if (mouse.button == SDL_BUTTON_LEFT) {
         
     }
@@ -371,7 +576,7 @@ void cleanUp() {
     }    
     textureMap.clear();
 
-    //* Cleanup music track and mixer
+    //* Cleanup music track and musicMixer
     for (auto& [name, audio] : soundMap) {
         MIX_DestroyAudio(audio);
     }
@@ -387,9 +592,9 @@ void cleanUp() {
         musicTrack = nullptr;
     }
 
-    if (mixer) {
-        MIX_DestroyMixer(mixer);
-        mixer = nullptr;
+    if (musicMixer) {
+        MIX_DestroyMixer(musicMixer);
+        musicMixer = nullptr;
     }
 
     //* Destroy rendering objects and quit SDL subsystems
@@ -440,9 +645,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Create a mixer attached to the default playback device (let SDL decide format)
-    mixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
-    if (!mixer) {
+    // Create a musicMixer attached to the default playback device (let SDL decide format)
+    musicMixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
+    if (!musicMixer) {
         log("MIX_CreateMixerDevice failed: ", SDL_GetError(), LOGTYPE::ERROR);
         MIX_Quit();
         SDL_DestroyRenderer(renderer);
@@ -451,10 +656,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    musicTrack = MIX_CreateTrack(mixer);
+    musicTrack = MIX_CreateTrack(musicMixer);
     if (!musicTrack) {
         log("MIX_CreateTrack failed: ", SDL_GetError(), LOGTYPE::ERROR);
-        if (mixer) MIX_DestroyMixer(mixer);
+        if (musicMixer) MIX_DestroyMixer(musicMixer);
         MIX_Quit();
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
