@@ -189,7 +189,6 @@ static void playMusic(std::string musicName) {
         return;
     }
     MIX_Audio* audio = it->second;
-    MIX_Audio* audio = it->second;
 
     if (!musicTrack) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Music track not initialized");
@@ -214,26 +213,26 @@ void initState() {
     if (lastState != currentState) {
         switch (currentState) {
             case STATE::TITLESCREEN: {
-                playMusic("BaseTheme");
+                playMusic("baseTheme");
                 break;
             }
             case STATE::MAINMENU: {
-                playMusic("BaseTheme");
+                playMusic("baseTheme");
                 // TODO: main menu logic
                 break;
             }
             case STATE::LOADOUTSELECT: {
-                playMusic("BaseTheme");
+                playMusic("baseTheme");
                 // TODO: loadout select logic
                 break;
             }
             case STATE::UPGRADEUNIT: {
-                playMusic("BaseTheme");
+                playMusic("baseTheme");
                 // TODO: upgrade unit logic
                 break;
             }
             case STATE::WORLDSELECT: {
-                playMusic("BaseTheme");
+                playMusic("baseTheme");
                 // TODO: world select logic
                 break;
             }
@@ -246,7 +245,7 @@ void initState() {
                 break;
             }
             case STATE::BANNERSELECT: {
-                playMusic("BaseTheme");
+                playMusic("baseTheme");
                 // TODO: banner select logic
                 break;
             }
@@ -256,12 +255,12 @@ void initState() {
                 break;
             }
             case STATE::STORAGEUNITS: {
-                playMusic("BaseTheme");
+                playMusic("baseTheme");
                 // TODO: storage units logic
                 break;
             }
             case STATE::STORAGEMATERIAL: {
-                playMusic("BaseTheme");
+                playMusic("baseTheme");
                 // TODO: storage material logic
                 break;
             }
