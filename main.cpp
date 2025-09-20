@@ -353,7 +353,7 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
         e.type = SDL_EVENT_QUIT;
         SDL_PushEvent(&e);
     }
-    log("Pressed: ", SDL_GetScancodeName(key.scancode), LOGTYPE::ERROR);
+    log("Pressed: ", SDL_GetScancodeName(key.scancode), LOGTYPE::INFO);
 }
 
 //* Handle mouse input events
