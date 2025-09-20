@@ -82,7 +82,7 @@ std::string logTypeToColor(LOGTYPE type) {
 void log(std::string messageInfo, std::string messageContent = "", LOGTYPE logType = LOGTYPE::NONE) {
     std::string logColor = logTypeToColor(logType);
 
-    std::string msg = logColor + messageInfo + "" + messageContent;
+    std::string msg = logColor + messageInfo + "\033[0m" + messageContent;
 
     SDL_Log(msg.c_str());
 }
