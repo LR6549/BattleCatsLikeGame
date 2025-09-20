@@ -37,7 +37,26 @@ std::unordered_map<std::string, SDL_Texture*> textureMap;
 std::unordered_map<std::string, MIX_Audio*> soundMap;
 std::unordered_map<std::string, MIX_Audio*> musicMap;
 
-//* Load JSON
+//* Game STATE
+enum class STATE {
+    NONE,
+    TITLESCREEN,
+    MAINMENU,
+    LOADOUTSELECT,
+    UPGRADEUNIT,
+    WORLDSELECT,
+    LEVELSELECT,
+    LEVELPLAY,
+    BANNERSELECT,
+    ROLLBANNER,
+    STORAGEUNITS,
+    STORAGEMATERIAL,
+};
+
+STATE currentState = STATE::TITLESCREEN;
+STATE lastState    = STATE::NONE;
+
+//* Load JSON from file and return as parsed json object
 json loadJson(std::string pathToJson) {
     std::ifstream inputFile(pathToJson);
     if (!inputFile.is_open()) {
@@ -49,7 +68,7 @@ json loadJson(std::string pathToJson) {
     return j;
 }
 
-//* Load Music
+//* Load all music files from "data/music/" into musicMap
 int loadMusic() {
     std::string musicFolderPath = path + "data/music/";
 
@@ -80,7 +99,7 @@ int loadMusic() {
     return 0;
 }
 
-//* Load sounds
+//* Load all sound effects from "data/sounds/" into soundMap
 int loadSounds() {
     std::string soundFolderPath = path + "data/sounds/";
 
@@ -111,7 +130,7 @@ int loadSounds() {
     return 0;
 }
 
-//* Load Textures
+//* Load all textures from "data/textures/" into textureMap
 int loadTextures() {
     std::string textureFolderPath = path + "data/textures/";
 
@@ -137,7 +156,7 @@ int loadTextures() {
     return 0;
 }
 
-
+//* Play a sound effect by name
 void playSound(const std::string& soundName) {
     //* check if sound Exists
     auto it = soundMap.find(soundName);
@@ -154,9 +173,8 @@ void playSound(const std::string& soundName) {
     }
 }
 
-//* helper function to start a new track with fade-out of the old one
-static void PlayNewTrack(MIX_Mixer *mixer, std::string soundName)
-{
+//* Start a new music track, fading out the old one (helper)
+static void playMusic(std::string musicName) {
     //* If a track is already playing, fade it out and stop
     if (musicTrack && MIX_TrackPlaying(musicTrack)) {
         SDL_PropertiesID fadeout_opts = SDL_CreateProperties();
@@ -165,29 +183,12 @@ static void PlayNewTrack(MIX_Mixer *mixer, std::string soundName)
     }
 
     //* check if music Exists
-    auto it = soundMap.find(soundName);
-    if (it == soundMap.end()) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Sound not found: %s", soundName.c_str());
-        return;
-    }
-    MIX_Audio* audio = it->second;
-
-    //* Loop infinitely by default
-    SDL_PropertiesID options = SDL_CreateProperties();
-    SDL_SetNumberProperty(options, MIX_PROP_PLAY_LOOPS_NUMBER, -1);
-    SDL_SetNumberProperty(options, MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, 2000);
-    MIX_PlayTrack(musicTrack, options);
-    SDL_DestroyProperties(options);
-}
-
-//* 
-void playMusic(const std::string& musicName) {
-    //* check if music Exists
     auto it = musicMap.find(musicName);
     if (it == musicMap.end()) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Music not found: %s", musicName.c_str());
         return;
     }
+    MIX_Audio* audio = it->second;
     MIX_Audio* audio = it->second;
 
     if (!musicTrack) {
@@ -195,18 +196,90 @@ void playMusic(const std::string& musicName) {
         return;
     }
 
-    MIX_SetTrackAudio(musicTrack, audio);
+    //* Loop infinitely by default
+    SDL_PropertiesID options = SDL_CreateProperties();
+    SDL_SetNumberProperty(options, MIX_PROP_PLAY_LOOPS_NUMBER, -1);
+    SDL_SetNumberProperty(options, MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, 2000);
+    MIX_PlayTrack(musicTrack, options);
     if (!MIX_PlayTrack(musicTrack, NULL)) {
         SDL_Log("Playing music: %s", musicName.c_str());
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_PlayTrack failed: %s", SDL_GetError());
     }
+    SDL_DestroyProperties(options);
 }
 
+//* Initialisation of a new game State
+void initState() {
+    if (lastState != currentState) {
+        switch (currentState) {
+            case STATE::TITLESCREEN: {
+                playMusic("BaseTheme");
+                break;
+            }
+            case STATE::MAINMENU: {
+                playMusic("BaseTheme");
+                // TODO: main menu logic
+                break;
+            }
+            case STATE::LOADOUTSELECT: {
+                playMusic("BaseTheme");
+                // TODO: loadout select logic
+                break;
+            }
+            case STATE::UPGRADEUNIT: {
+                playMusic("BaseTheme");
+                // TODO: upgrade unit logic
+                break;
+            }
+            case STATE::WORLDSELECT: {
+                playMusic("BaseTheme");
+                // TODO: world select logic
+                break;
+            }
+            case STATE::LEVELSELECT: {
+                // TODO: level select logic
+                break;
+            }
+            case STATE::LEVELPLAY: {
+                // TODO: level play logic
+                break;
+            }
+            case STATE::BANNERSELECT: {
+                playMusic("BaseTheme");
+                // TODO: banner select logic
+                break;
+            }
+            case STATE::ROLLBANNER: {
+                playMusic("Silent");
+                // TODO: roll banner logic
+                break;
+            }
+            case STATE::STORAGEUNITS: {
+                playMusic("BaseTheme");
+                // TODO: storage units logic
+                break;
+            }
+            case STATE::STORAGEMATERIAL: {
+                playMusic("BaseTheme");
+                // TODO: storage material logic
+                break;
+            }
+            default: {
+                // Optional: handle unknown/invalid state
+                break;
+            }
+        }
+        lastState = currentState;
+    }
+}
+
+//* Update function (game logic per frame)
 void update(int deltaTime) {
     
 }
 
+//* Draw a texture by name at given coordinates
 void drawTexture(const std::string& textureName, float x = 0, float y = 0) {
     //* check if texture Exists
     auto it = textureMap.find(textureName);
@@ -234,12 +307,12 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0) {
     }
 }
 
-
+//* Render function (main drawing function for a frame)
 void render() {
     drawTexture("mainMenuBackground");
 }
 
-//* Handle Keyboard
+//* Handle keyboard input events
 void handleKeyboardInput(const SDL_KeyboardEvent& key) {
     if (key.key == SDLK_ESCAPE) {
         SDL_Event e;
@@ -249,14 +322,14 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
     SDL_Log("Pressed: " + *SDL_GetScancodeName(key.scancode));
 }
 
-//* Handle Mouse
+//* Handle mouse input events
 void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
     if (mouse.button == SDL_BUTTON_LEFT) {
         
     }
 }
 
-//* Cleaning up allocated memory
+//* Cleanup all loaded resources and shutdown SDL properly
 void cleanUp() {
     //* Cleanup textures
     for (auto& [name, tex] : textureMap) {
@@ -264,11 +337,12 @@ void cleanUp() {
     }    
     textureMap.clear();
 
+    //* Cleanup music track and mixer
     for (auto& [name, audio] : soundMap) {
         MIX_DestroyAudio(audio);
     }
-    soundMap.clear();
 
+    soundMap.clear();
     for (auto& [name, music] : musicMap) {
         MIX_DestroyAudio(music);
     }
@@ -284,7 +358,7 @@ void cleanUp() {
         mixer = nullptr;
     }
 
-    //* Clean Up SDL
+    //* Destroy rendering objects and quit SDL subsystems
     if (renderTexture) SDL_DestroyTexture(renderTexture);
     if (renderer) SDL_DestroyRenderer(renderer);
     if (window) SDL_DestroyWindow(window);
@@ -367,15 +441,18 @@ int main(int argc, char* argv[]) {
     while (running) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
-                case SDL_EVENT_QUIT:
+                case SDL_EVENT_QUIT: {
                     cleanUp();
                     return 0;
-                case SDL_EVENT_KEY_DOWN:
+                }
+                case SDL_EVENT_KEY_DOWN: {
                     handleKeyboardInput(event.key);
                     break;
-                case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                }
+                case SDL_EVENT_MOUSE_BUTTON_DOWN: {
                     handleMouseInput(event.button);
                     break;
+                }
             }
         }
 
