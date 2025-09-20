@@ -53,6 +53,8 @@ enum class STATE {
     STORAGEMATERIAL,
 };
 
+bool isPaused = false;
+
 STATE currentState = STATE::TITLESCREEN;
 STATE lastState    = STATE::NONE;
 
@@ -166,7 +168,7 @@ void playSound(const std::string& soundName) {
     }
     MIX_Audio* audio = it->second;
 
-    if (MIX_PlayAudio(mixer, audio) == 0) {
+    if (!MIX_PlayAudio(mixer, audio)) {
         SDL_Log("Played sound: %s", soundName.c_str());
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_PlayAudio failed: %s", SDL_GetError());
@@ -199,8 +201,7 @@ static void playMusic(std::string musicName) {
     SDL_PropertiesID options = SDL_CreateProperties();
     SDL_SetNumberProperty(options, MIX_PROP_PLAY_LOOPS_NUMBER, -1);
     SDL_SetNumberProperty(options, MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, 2000);
-    MIX_PlayTrack(musicTrack, options);
-    if (!MIX_PlayTrack(musicTrack, NULL)) {
+    if (!MIX_PlayTrack(musicTrack, options)) {
         SDL_Log("Playing music: %s", musicName.c_str());
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_PlayTrack failed: %s", SDL_GetError());
@@ -275,7 +276,7 @@ void initState() {
 
 //* Update function (game logic per frame)
 void update(int deltaTime) {
-    
+    initState();
 }
 
 //* Draw a texture by name at given coordinates
@@ -367,7 +368,7 @@ void cleanUp() {
 }
 
 int main(int argc, char* argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init Error: %s", SDL_GetError());
         return 1;
     }
@@ -465,6 +466,10 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderTarget(renderer, renderTexture);
         SDL_SetRenderDrawColor(renderer, 20, 20, 80, 255);
         SDL_RenderClear(renderer);
+
+        if (!isPaused) {
+            update(deltaTime);
+        }
 
         render();
 
