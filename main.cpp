@@ -53,22 +53,27 @@ json loadJson(std::string pathToJson) {
 int loadMusic() {
     std::string musicFolderPath = path + "data/music/";
 
+    if (!fs::exists(musicFolderPath)) {
+        SDL_Log("Music folder does not exist: %s", musicFolderPath.c_str());
+        return 0;
+    }
+
     for (const auto& dir : fs::recursive_directory_iterator(musicFolderPath)) {
         if (dir.is_regular_file() && dir.path().extension() == ".mp3") {
             std::string tempPath = dir.path().string();
             std::string tempName = dir.path().stem().string();
 
-            SDL_Log(("Music: " + tempName + " in " + tempPath).c_str());
+            SDL_Log("Music: %s in %s", tempName.c_str(), tempPath.c_str());
             
-            //* Load Audio from file
-            MIX_Audio* audio = MIX_LoadAudio(mixer, tempPath.c_str(), true);
+            //* Load Audio from file (not streamed)
+            MIX_Audio* audio = MIX_LoadAudio(mixer, tempPath.c_str(), false);
             if (!audio) {
-                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load music" + *SDL_GetError());
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load music '%s': %s", tempPath.c_str(), SDL_GetError());
                 continue;
             }
             
             musicMap[tempName] = audio;
-            SDL_Log(("Loaded Music : " + tempPath + " in " + tempName).c_str());
+            SDL_Log("Loaded Music : %s as %s", tempPath.c_str(), tempName.c_str());
         }
     }
 
@@ -79,22 +84,27 @@ int loadMusic() {
 int loadSounds() {
     std::string soundFolderPath = path + "data/sounds/";
 
+    if (!fs::exists(soundFolderPath)) {
+        SDL_Log("Sound folder does not exist: %s", soundFolderPath.c_str());
+        return 0;
+    }
+
     for (const auto& dir : fs::recursive_directory_iterator(soundFolderPath)) {
         if (dir.is_regular_file() && dir.path().extension() == ".mp3") {
             std::string tempPath = dir.path().string();
             std::string tempName = dir.path().stem().string();
 
-            SDL_Log(("Sound: " + tempName + " in " + tempPath).c_str());
+            SDL_Log("Sound: %s in %s", tempName.c_str(), tempPath.c_str());
             
-            //* Load Audio from file
-            MIX_Audio* audio = MIX_LoadAudio(mixer, tempPath.c_str(), true);
+            //* Load Audio from file (not streamed)
+            MIX_Audio* audio = MIX_LoadAudio(mixer, tempPath.c_str(), false);
             if (!audio) {
-                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load sound" + *SDL_GetError());
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load sound '%s': %s", tempPath.c_str(), SDL_GetError());
                 continue;
             }
 
             soundMap[tempName] = audio;
-            SDL_Log(("Loaded Sound : " + tempPath + " in " + tempName).c_str());
+            SDL_Log("Loaded Sound : %s as %s", tempPath.c_str(), tempName.c_str());
         }
     }
 
@@ -125,6 +135,72 @@ int loadTextures() {
     }
 
     return 0;
+}
+
+
+void playSound(const std::string& soundName) {
+    //* check if sound Exists
+    auto it = soundMap.find(soundName);
+    if (it == soundMap.end()) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Sound not found: %s", soundName.c_str());
+        return;
+    }
+    MIX_Audio* audio = it->second;
+
+    if (MIX_PlayAudio(mixer, audio) == 0) {
+        SDL_Log("Played sound: %s", soundName.c_str());
+    } else {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_PlayAudio failed: %s", SDL_GetError());
+    }
+}
+
+//* helper function to start a new track with fade-out of the old one
+static void PlayNewTrack(MIX_Mixer *mixer, std::string soundName)
+{
+    //* If a track is already playing, fade it out and stop
+    if (musicTrack && MIX_TrackPlaying(musicTrack)) {
+        SDL_PropertiesID fadeout_opts = SDL_CreateProperties();
+        SDL_SetNumberProperty(fadeout_opts, MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, 3000);
+        SDL_DestroyProperties(fadeout_opts);
+    }
+
+    //* check if music Exists
+    auto it = soundMap.find(soundName);
+    if (it == soundMap.end()) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Sound not found: %s", soundName.c_str());
+        return;
+    }
+    MIX_Audio* audio = it->second;
+
+    //* Loop infinitely by default
+    SDL_PropertiesID options = SDL_CreateProperties();
+    SDL_SetNumberProperty(options, MIX_PROP_PLAY_LOOPS_NUMBER, -1);
+    SDL_SetNumberProperty(options, MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, 2000);
+    MIX_PlayTrack(musicTrack, options);
+    SDL_DestroyProperties(options);
+}
+
+//* 
+void playMusic(const std::string& musicName) {
+    //* check if music Exists
+    auto it = musicMap.find(musicName);
+    if (it == musicMap.end()) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Music not found: %s", musicName.c_str());
+        return;
+    }
+    MIX_Audio* audio = it->second;
+
+    if (!musicTrack) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Music track not initialized");
+        return;
+    }
+
+    MIX_SetTrackAudio(musicTrack, audio);
+    if (!MIX_PlayTrack(musicTrack, NULL)) {
+        SDL_Log("Playing music: %s", musicName.c_str());
+    } else {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_PlayTrack failed: %s", SDL_GetError());
+    }
 }
 
 void update(int deltaTime) {
@@ -158,31 +234,6 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0) {
     }
 }
 
-void playSound(const std::string& soundName) {
-    //* check if sound Exists
-    auto it = soundMap.find(soundName);
-    if (it == soundMap.end()) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, ("Texture not found: " + soundName).c_str());
-        return;
-    }
-    MIX_Audio* audio = it->second;
-
-    MIX_PlayAudio(mixer, audio);
-}
-
-void playMusic(const std::string& musicName) {
-    //* check if sound Exists
-    auto it = musicMap.find(musicName);
-    if (it == musicMap.end()) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, ("Texture not found: " + musicName).c_str());
-        return;
-    }
-    MIX_Audio* audio = it->second;
-
-    MIX_SetTrackAudio(musicTrack, audio);
-
-    MIX_PlayTrack(musicTrack, 0);
-}
 
 void render() {
     drawTexture("mainMenuBackground");
@@ -205,11 +256,14 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
     }
 }
 
+//* Cleaning up allocated memory
 void cleanUp() {
     //* Cleanup textures
     for (auto& [name, tex] : textureMap) {
         SDL_DestroyTexture(tex);
     }    
+    textureMap.clear();
+
     for (auto& [name, audio] : soundMap) {
         MIX_DestroyAudio(audio);
     }
@@ -220,38 +274,50 @@ void cleanUp() {
     }
     musicMap.clear();
 
+    if (musicTrack) {
+        MIX_DestroyTrack(musicTrack);
+        musicTrack = nullptr;
+    }
+
+    if (mixer) {
+        MIX_DestroyMixer(mixer);
+        mixer = nullptr;
+    }
+
     //* Clean Up SDL
-    SDL_DestroyTexture(renderTexture);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    if (renderTexture) SDL_DestroyTexture(renderTexture);
+    if (renderer) SDL_DestroyRenderer(renderer);
+    if (window) SDL_DestroyWindow(window);
+
     MIX_Quit();
     SDL_Quit();
 }
 
 int main(int argc, char* argv[]) {
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init Error: " + *SDL_GetError());
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init Error: %s", SDL_GetError());
         return 1;
     }
 
     window = SDL_CreateWindow(title.c_str(), windowWidth, windowHeight, SDL_WINDOW_RESIZABLE);
     if (!window) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateWindow failed: " + *SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateWindow failed: %s", SDL_GetError());
         SDL_Quit();
         return 1;
     }
 
+    // create a renderer (index -1 = first, flags = accelerated+vsync recommended)
     renderer = SDL_CreateRenderer(window, nullptr);
     if (!renderer) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateRenderer failed: " + *SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateRenderer failed: %s", SDL_GetError());
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
     
-    renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, virtualWidth, virtualHeight);
+    renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, virtualWidth, virtualHeight);
     if (!renderTexture) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateTexture failed: " + *SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateTexture failed: %s", SDL_GetError());
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -263,18 +329,14 @@ int main(int argc, char* argv[]) {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
-        MIX_Quit();
         return 1;
     }
 
-    SDL_AudioSpec spec{};
-    spec.freq = 44100;
-    spec.format = SDL_AUDIO_F32;
-    spec.channels = 2;
-
-    mixer = MIX_CreateMixer(&spec);
+    // Create a mixer attached to the default playback device (let SDL decide format)
+    mixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
     if (!mixer) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_CreateMixer failed: " + *SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_CreateMixerDevice failed: %s", SDL_GetError());
+        MIX_Quit();
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -282,14 +344,17 @@ int main(int argc, char* argv[]) {
     }
 
     musicTrack = MIX_CreateTrack(mixer);
-    if(!musicTrack) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_CreateTrack failed: " + *SDL_GetError());
+    if (!musicTrack) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MIX_CreateTrack failed: %s", SDL_GetError());
+        if (mixer) MIX_DestroyMixer(mixer);
+        MIX_Quit();
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
 
+    // load config, assets
     settings = loadJson(path + "/data/config/settings.json");
     loadMusic();
     loadSounds();
@@ -297,7 +362,7 @@ int main(int argc, char* argv[]) {
 
     SDL_Event event;
     bool running    = true;
-    int lastTicks   = SDL_GetTicks();
+    uint64_t lastTicks   = SDL_GetTicks();
 
     while (running) {
         while (SDL_PollEvent(&event)) {
