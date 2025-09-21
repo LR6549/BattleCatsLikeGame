@@ -10,6 +10,7 @@
 #include <SDL3/SDL3_ttf/SDL_ttf.h>
 #include <SDL3/SDL3_rtf/SDL_rtf.h>
 #include <SDL3/SDL3_net/SDL_net.h>
+#include "logging.hpp"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -59,35 +60,6 @@ bool isPaused = false;
 
 STATE currentState = STATE::TITLESCREEN;
 STATE lastState    = STATE::NONE;
-
-enum class LOGTYPE {
-    NONE,
-    ERROR,
-    WARNING,
-    INFO,
-    SUCCESS
-};
-
-//* Returns a string for the corresponding error type
-std::string logTypeToColor(LOGTYPE type) {
-    switch (type) {
-        case LOGTYPE::NONE:    return "\033[0m";
-        case LOGTYPE::ERROR:   return "\033[91;1;4m";
-        case LOGTYPE::WARNING: return "\033[33;1;4m";
-        case LOGTYPE::INFO:    return "\033[93;1;4m";
-        case LOGTYPE::SUCCESS: return "\033[92;1;4m";
-    }
-    return "\033[0m";
-}
-
-//* A wrapper for SDL_Log but with messageInfo highlighted in color showing degree
-void log(std::string messageInfo, std::string messageContent = "", LOGTYPE logType = LOGTYPE::NONE) {
-    std::string logColor = logTypeToColor(logType);
-
-    std::string msg = logColor + messageInfo + "\033[0m" + messageContent;
-
-    SDL_Log(msg.c_str());
-}
 
 //* Load JSON from file and return as parsed json object
 json loadJson(std::string pathToJson) {
