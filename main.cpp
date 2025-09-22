@@ -44,9 +44,9 @@ std::unordered_map<std::string, MIX_Audio*> musicMap;
 
 std::unordered_map<std::string, std::unique_ptr<Button>> buttonMap = {
     {"", std::make_unique<Button>("", 0.0f, 0.0f, "NONE")},
-    {"TitleScreenPlay", std::make_unique<Button>("", 0.0f, 0.0f, "TitleScreenPlay")},
-    {"TitleScreenSettings", std::make_unique<Button>("", 0.0f, 0.0f, "TitleScreenSettings")},
-    {"TitleScreenQuit", std::make_unique<Button>("", 0.0f, 0.0f, "TitleScreenQuit")},
+    {"TitleScreenPlay", std::make_unique<Button>("TitleScreenPlayBTN", 737.0f, 420.0f, "TitleScreenPlay")},
+    {"TitleScreenSettings", std::make_unique<Button>("TitleScreenSettingsBTN", 737.0f, 585.0f, "TitleScreenSettings")},
+    {"TitleScreenQuit", std::make_unique<Button>("TitleScreenQuitBTN", 737.0f, 740.0f, "TitleScreenQuit")},
 };
 
 //* Game STATE
@@ -401,11 +401,12 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool 
 
 //* Render function (main drawing function for a frame)
 void render() {
-
     switch (currentState) {
         case STATE::TITLESCREEN: {
             // TODO: title screen logic
             drawTexture("mainMenuBackground");
+            buttonMap.at("TitleScreenPlay")->render();
+            buttonMap.at("TitleScreenSettings")->render();
             buttonMap.at("TitleScreenQuit")->render();
             break;
         }
