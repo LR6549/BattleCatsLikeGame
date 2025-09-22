@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <string>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL3_image/SDL_image.h>
@@ -12,6 +13,7 @@
 #include <SDL3/SDL3_net/SDL_net.h>
 #include "logging.hpp"
 #include "aabbCollision.hpp"
+#include "buttonStruct.hpp"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -40,6 +42,12 @@ std::unordered_map<std::string, SDL_Texture*> textureMap;
 std::unordered_map<std::string, MIX_Audio*> soundMap;
 std::unordered_map<std::string, MIX_Audio*> musicMap;
 
+std::unordered_map<std::string, std::unique_ptr<Button>> buttonMap = {
+    {"", std::make_unique<Button>("", 0.0f, 0.0f, "NONE")},
+    {"TitleScreenPlay", std::make_unique<Button>("", 0.0f, 0.0f, "TitleScreenPlay")},
+    {"TitleScreenSettings", std::make_unique<Button>("", 0.0f, 0.0f, "TitleScreenSettings")},
+    {"TitleScreenQuit", std::make_unique<Button>("", 0.0f, 0.0f, "TitleScreenQuit")},
+};
 
 //* Game STATE
 enum class STATE {
@@ -62,6 +70,8 @@ bool isPaused = false;
 
 STATE currentState = STATE::TITLESCREEN;
 STATE lastState    = STATE::NONE;
+
+float scaleMousePositionFactorX, scaleMousePositionFactorY = 1.0f;
 
 //* Load JSON from file and return as parsed json object
 json loadJson(std::string pathToJson) {
@@ -391,9 +401,60 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool 
 
 //* Render function (main drawing function for a frame)
 void render() {
-    drawTexture("mainMenuBackground");
 
-
+    switch (currentState) {
+        case STATE::TITLESCREEN: {
+            // TODO: title screen logic
+            drawTexture("mainMenuBackground");
+            buttonMap.at("TitleScreenQuit")->render();
+            break;
+        }
+        case STATE::MAINMENU: {
+            // TODO: main menu logic
+            break;
+        }
+        case STATE::LOADOUTSELECT: {
+            // TODO: loadout select logic
+            break;
+        }
+        case STATE::UPGRADEUNIT: {
+            // TODO: upgrade unit logic
+            break;
+        }
+        case STATE::WORLDSELECT: {
+            // TODO: world select logic
+            break;
+        }
+        case STATE::LEVELSELECT: {
+            // TODO: level select logic
+            break;
+        }
+        case STATE::LEVELPLAY: {
+            // TODO: level play logic
+            break;
+        }
+        case STATE::BANNERSELECT: {
+            // TODO: banner select logic
+            break;
+        }
+        case STATE::ROLLBANNER: {
+            // TODO: roll banner logic
+            break;
+        }
+        case STATE::STORAGEUNITS: {
+            // TODO: storage units logic
+            break;
+        }
+        case STATE::STORAGEMATERIAL: {
+            // TODO: storage material logic
+            break;
+        }
+        default: {
+            // Optional: handle unknown/invalid state
+            break;
+        }
+    }
+    
     if (isPaused) {
         drawTexture("PAUSED", 0, 0, true);
     }
@@ -404,11 +465,7 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
     switch (currentState) {
         case STATE::TITLESCREEN: {
             // TODO: title screen logic
-            if (key.key == SDLK_ESCAPE) {
-                SDL_Event e;
-                e.type = SDL_EVENT_QUIT;
-                SDL_PushEvent(&e);
-            }
+            
             break;
         }
         case STATE::MAINMENU: {
@@ -489,54 +546,69 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
 
 //* Handle mouse input events
 void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
-    switch (currentState) {
-        case STATE::TITLESCREEN: {
-            // TODO: title screen logic
-            break;
-        }
-        case STATE::MAINMENU: {
-            // TODO: main menu logic
-            break;
-        }
-        case STATE::LOADOUTSELECT: {
-            // TODO: loadout select logic
-            break;
-        }
-        case STATE::UPGRADEUNIT: {
-            // TODO: upgrade unit logic
-            break;
-        }
-        case STATE::WORLDSELECT: {
-            // TODO: world select logic
-            break;
-        }
-        case STATE::LEVELSELECT: {
-            // TODO: level select logic
-            break;
-        }
-        case STATE::LEVELPLAY: {
-            // TODO: level play logic
-            break;
-        }
-        case STATE::BANNERSELECT: {
-            // TODO: banner select logic
-            break;
-        }
-        case STATE::ROLLBANNER: {
-            // TODO: roll banner logic
-            break;
-        }
-        case STATE::STORAGEUNITS: {
-            // TODO: storage units logic
-            break;
-        }
-        case STATE::STORAGEMATERIAL: {
-            // TODO: storage material logic
-            break;
-        }
-        default: {
-            // Optional: handle unknown/invalid state
-            break;
+    if (mouse.down && mouse.button == SDL_BUTTON_LEFT) {
+
+        float mouseX = mouse.x * scaleMousePositionFactorX;
+        float mouseY = mouse.y * scaleMousePositionFactorY;
+
+        switch (currentState) {
+            case STATE::TITLESCREEN: {
+                // TODO: title screen logic
+                if (buttonMap.at("TitleScreenPlay")->isPressed(mouseX, mouseY)) {
+                    currentState = STATE::MAINMENU;
+                } else if (buttonMap.at("TitleScreenSettings")->isPressed(mouseX, mouseY)) {
+                    currentState = STATE::SETTINGS;
+                } else if (buttonMap.at("TitleScreenQuit")->isPressed(mouseX, mouseY)) {
+                    SDL_Event e;
+                    e.type = SDL_EVENT_QUIT;
+                    SDL_PushEvent(&e);
+                }
+                break;
+            }
+            case STATE::MAINMENU: {
+                // TODO: main menu logic
+                break;
+            }
+            case STATE::LOADOUTSELECT: {
+                // TODO: loadout select logic
+                break;
+            }
+            case STATE::UPGRADEUNIT: {
+                // TODO: upgrade unit logic
+                break;
+            }
+            case STATE::WORLDSELECT: {
+                // TODO: world select logic
+                break;
+            }
+            case STATE::LEVELSELECT: {
+                // TODO: level select logic
+                break;
+            }
+            case STATE::LEVELPLAY: {
+                // TODO: level play logic
+                break;
+            }
+            case STATE::BANNERSELECT: {
+                // TODO: banner select logic
+                break;
+            }
+            case STATE::ROLLBANNER: {
+                // TODO: roll banner logic
+                break;
+            }
+            case STATE::STORAGEUNITS: {
+                // TODO: storage units logic
+                break;
+            }
+            case STATE::STORAGEMATERIAL: {
+                // TODO: storage material logic
+                break;
+            }
+            default: {
+                // Optional: handle unknown/invalid state
+                break;
+            }
         }
     }
     if (mouse.button == SDL_BUTTON_LEFT) {

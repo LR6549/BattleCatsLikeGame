@@ -16,18 +16,25 @@ std::unordered_map<std::string, SDL_Texture*> textureMap;
 
 void playSound(const std::string& soundName);
 
-void drawTexture(const std::string& textureName, float x = 0, float y = 0);
+void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool flipTexture = false);
 
 void emptyFunction() {
 
 }
 
 struct Button {
-    std::string textureName;
-    float x, y = 0.0f;
-    float w, h = 0.0f;
+    std::string b_buttonName;
+    std::string b_textureName;
 
-    Button(std::string textureName, float x, float y) {
+    float b_x, b_y = 0.0f;
+    float b_w, b_h = 0.0f;
+
+    Button(std::string textureName, float x, float y, std::string buttonName = "") {
+        b_buttonName = buttonName;
+        b_textureName = textureName;
+        b_x = x;
+        b_y = y;
+
         auto it = textureMap.find(textureName);
         if (it == textureMap.end()) {
             log("Texture not found: ", textureName, LOGTYPE::ERROR);
@@ -35,15 +42,21 @@ struct Button {
         }
         SDL_Texture* tex = it->second;
 
-        SDL_GetTextureSize(tex, &w, &h);
+        SDL_GetTextureSize(tex, &b_w, &b_h);
     }
 
     bool isPressed(float mouseX, float mouseY) {
-        return (x, y, w, h, mouseX, mouseY);
+        bool pressed = aabbCollision(b_x, b_y, b_w, b_h, mouseX, mouseY);
+
+        if (pressed) {
+            log("Pressed Button: ", b_buttonName, LOGTYPE::INFO);
+        }
+
+        return pressed;
     }
 
     void render() {
-        drawTexture(textureName, x, y);
+        drawTexture(b_textureName, b_x, b_y);
     }
 };
 
