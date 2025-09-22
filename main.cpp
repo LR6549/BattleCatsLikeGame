@@ -11,6 +11,7 @@
 #include <SDL3/SDL3_rtf/SDL_rtf.h>
 #include <SDL3/SDL3_net/SDL_net.h>
 #include "logging.hpp"
+#include "aabbCollision.hpp"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
