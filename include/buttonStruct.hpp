@@ -41,6 +41,10 @@ struct Button {
     bool isPressed(float mouseX, float mouseY) {
         return (x, y, w, h, mouseX, mouseY);
     }
+
+    void render() {
+        drawTexture(textureName, x, y);
+    }
 };
 
 #endif

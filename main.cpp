@@ -40,6 +40,7 @@ std::unordered_map<std::string, SDL_Texture*> textureMap;
 std::unordered_map<std::string, MIX_Audio*> soundMap;
 std::unordered_map<std::string, MIX_Audio*> musicMap;
 
+
 //* Game STATE
 enum class STATE {
     NONE,
@@ -359,7 +360,7 @@ void update(int deltaTime) {
 }
 
 //* Draw a texture by name at given coordinates
-void drawTexture(const std::string& textureName, float x = 0, float y = 0) {
+void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool flipTexture = true) {
     //* check if texture Exists
     auto it = textureMap.find(textureName);
     if (it == textureMap.end()) {
@@ -381,7 +382,9 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0) {
     //* Destination rectangle using the Texture Size
     SDL_FRect dst = {x, y, texW, texH};
 
-    if (!SDL_RenderTexture(renderer, tex, nullptr, &dst)) {
+    SDL_FlipMode flipOrientation = flipTexture ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+
+    if (!SDL_RenderTextureRotated(renderer, tex, nullptr, &dst, 0.0, nullptr, flipOrientation)) {
         log("SDL_RenderTexture failed: ", SDL_GetError(), LOGTYPE::ERROR);
     }
 }
@@ -392,7 +395,7 @@ void render() {
 
 
     if (isPaused) {
-        drawTexture("PAUSED");
+        drawTexture("PAUSED", 0, 0, true);
     }
 }
 
