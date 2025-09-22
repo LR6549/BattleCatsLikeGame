@@ -1,3 +1,5 @@
+#ifndef AABBCOLLISION
+#define AABBCOLLISION
 
 /*
     * Standart AABB Collision Check
@@ -7,3 +9,5 @@ inline bool aabbCollision(float x1, float y1, float w1, float h1, float x2, floa
         return true;
     } return false;
 }
+
+#endif

@@ -31,8 +31,8 @@ MIX_Track*      musicTrack = nullptr;
 
 //* Window Configs
 std::string title = "BattleCatsLike";
-int windowWidth  = 800;
-int windowHeight = 600;
+int windowWidth  = 960;
+int windowHeight = 540;
 
 const int virtualWidth  = 1920;
 const int virtualHeight = 1080;
@@ -42,12 +42,7 @@ std::unordered_map<std::string, SDL_Texture*> textureMap;
 std::unordered_map<std::string, MIX_Audio*> soundMap;
 std::unordered_map<std::string, MIX_Audio*> musicMap;
 
-std::unordered_map<std::string, std::unique_ptr<Button>> buttonMap = {
-    {"", std::make_unique<Button>("", 0.0f, 0.0f, "NONE")},
-    {"TitleScreenPlay", std::make_unique<Button>("TitleScreenPlayBTN", 737.0f, 420.0f, "TitleScreenPlay")},
-    {"TitleScreenSettings", std::make_unique<Button>("TitleScreenSettingsBTN", 737.0f, 585.0f, "TitleScreenSettings")},
-    {"TitleScreenQuit", std::make_unique<Button>("TitleScreenQuitBTN", 737.0f, 740.0f, "TitleScreenQuit")},
-};
+std::unordered_map<std::string, std::unique_ptr<Button>> buttonMap;
 
 //* Game STATE
 enum class STATE {
@@ -71,7 +66,16 @@ bool isPaused = false;
 STATE currentState = STATE::TITLESCREEN;
 STATE lastState    = STATE::NONE;
 
-float scaleMousePositionFactorX, scaleMousePositionFactorY = 1.0f;
+float scaleMousePositionFactorX = 2.0f;
+float scaleMousePositionFactorY = 2.0f;
+
+//* Puts all buttons in the button map
+void setUpButtons() {
+    buttonMap.emplace("", std::make_unique<Button>("", 0.0f, 0.0f, "NONE"));
+    buttonMap.emplace("TitleScreenPlay", std::make_unique<Button>("titleScreenPlayBTN", 737.0f, 420.0f, "TitleScreenPlay"));
+    buttonMap.emplace("TitleScreenSettings", std::make_unique<Button>("titleScreenSettingsBTN", 737.0f, 585.0f, "TitleScreenSettings"));
+    buttonMap.emplace("TitleScreenQuit", std::make_unique<Button>("titleScreenQuitBTN", 737.0f, 740.0f, "TitleScreenQuit"));
+}
 
 //* Load JSON from file and return as parsed json object
 json loadJson(std::string pathToJson) {
@@ -176,6 +180,32 @@ int loadTextures() {
     }
 
     return 0;
+}
+
+//* Updates the mouse Scales if window size changed!
+void updateMouseScale() {
+    int currentWindowW, currentWindowH;
+    SDL_GetWindowSize(window, &currentWindowW, &currentWindowH);
+
+    if (currentWindowW != windowWidth || currentWindowH != windowHeight) {
+        //! Change to Log
+        // std::cout << "Window Resolution Was Changed! From: "
+        //           << widthOld << "," << heightOld
+        //           << "; To: "
+        //           << windowW << "," << windowH << "\n";
+        
+        float scaleX = static_cast<float>(currentWindowW) / 960.0f;
+        float scaleY = static_cast<float>(currentWindowH) / 540.0f;
+        scaleMousePositionFactorX = 2.0f / scaleX;
+        scaleMousePositionFactorY = 2.0f / scaleY;
+        
+        //! Change to Log
+        // std::cout << "New Scales: " << scaleX << "," << scaleY
+        //           << " for mouse: " << scaleXMouse << "," << scaleYMouse << "\n";
+        
+        windowWidth = currentWindowW;
+        windowHeight = currentWindowH;
+    }
 }
 
 //* Updates the music and sound mixer gain based on the settings
@@ -370,7 +400,7 @@ void update(int deltaTime) {
 }
 
 //* Draw a texture by name at given coordinates
-void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool flipTexture = true) {
+void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool flipTexture = false) {
     //* check if texture Exists
     auto it = textureMap.find(textureName);
     if (it == textureMap.end()) {
@@ -547,10 +577,12 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
 
 //* Handle mouse input events
 void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
-    if (mouse.down && mouse.button == SDL_BUTTON_LEFT) {
+    if (mouse.button == SDL_BUTTON_LEFT) {
 
         float mouseX = mouse.x * scaleMousePositionFactorX;
         float mouseY = mouse.y * scaleMousePositionFactorY;
+
+        log("Left Click at:", (std::to_string(mouseX) + ", " + std::to_string(mouseY)), LOGTYPE::INFO);
 
         switch (currentState) {
             case STATE::TITLESCREEN: {
@@ -716,7 +748,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // load config, assets
+    //* load config, assets and general set up calls
+    setUpButtons();
     settings = loadJson(path + "/data/config/settings.json");
     loadMusic();
     loadSounds();
@@ -727,6 +760,8 @@ int main(int argc, char* argv[]) {
     uint64_t lastTicks   = SDL_GetTicks();
 
     while (running) {
+        updateMouseScale();
+
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_EVENT_QUIT: {
@@ -737,7 +772,7 @@ int main(int argc, char* argv[]) {
                     handleKeyboardInput(event.key);
                     break;
                 }
-                case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+                case SDL_EVENT_MOUSE_BUTTON_UP: {
                     handleMouseInput(event.button);
                     break;
                 }
@@ -781,3 +816,8 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
+//! Current Bugs/Errors:
+/*
+! Button Does Not Detect press! (Main Title Menu)
+*/

@@ -1,22 +1,16 @@
 #ifndef BUTTONSTRUCT
 #define BUTTONSTRUCT
 
-#include <iostream>
 #include <string>
-#include <nlohmann/json.hpp>
 #include <SDL3/SDL.h>
 #include "logging.hpp"
 #include "aabbCollision.hpp"
 
-namespace fs = std::filesystem;
-using json = nlohmann::json;
-json settings;
-
-std::unordered_map<std::string, SDL_Texture*> textureMap;
+extern std::unordered_map<std::string, SDL_Texture*> textureMap;
 
 void playSound(const std::string& soundName);
 
-void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool flipTexture = false);
+void drawTexture(const std::string& textureName, float x, float y, bool flipTexture);
 
 void emptyFunction() {
 
@@ -26,8 +20,8 @@ struct Button {
     std::string b_buttonName;
     std::string b_textureName;
 
-    float b_x, b_y = 0.0f;
-    float b_w, b_h = 0.0f;
+    float b_x = 0.0f, b_y = 0.0f;
+    float b_w = 0.0f, b_h = 0.0f;
 
     Button(std::string textureName, float x, float y, std::string buttonName = "") {
         b_buttonName = buttonName;
@@ -56,7 +50,7 @@ struct Button {
     }
 
     void render() {
-        drawTexture(b_textureName, b_x, b_y);
+        drawTexture(b_textureName, b_x, b_y, false);
     }
 };
 
