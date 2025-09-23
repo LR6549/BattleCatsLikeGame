@@ -18,6 +18,8 @@ set compileCommand=%compiler% main.cpp -o %exeName%.exe %lAndIPaths% %linkingFla
 
 echo Compiling %exeName% Script ...
 
+echo %compileCommand%
+
 %compileCommand%
 
 :: Fehlerprüfung
