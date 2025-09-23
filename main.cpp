@@ -63,8 +63,9 @@ enum class STATE {
 
 bool isPaused = false;
 
-STATE currentState = STATE::TITLESCREEN;
-STATE lastState    = STATE::NONE;
+STATE currentState  = STATE::TITLESCREEN;
+STATE lastState     = STATE::NONE;
+STATE previousState = STATE::NONE;
 
 float scaleMousePositionFactorX = 2.0f;
 float scaleMousePositionFactorY = 2.0f;
@@ -289,6 +290,11 @@ void initState() {
                 // TODO: main menu logic
                 break;
             }
+            case STATE::SETTINGS: {
+                playMusic("baseTheme");
+                // TODO: main menu logic
+                break;
+            }
             case STATE::LOADOUTSELECT: {
                 playMusic("baseTheme");
                 // TODO: loadout select logic
@@ -337,6 +343,7 @@ void initState() {
                 break;
             }
         }
+        previousState = currentState;
         lastState = currentState;
     }
 }
@@ -352,6 +359,10 @@ void update(int deltaTime) {
             break;
         }
         case STATE::MAINMENU: {
+            // TODO: main menu logic
+            break;
+        }
+        case STATE::SETTINGS: {
             // TODO: main menu logic
             break;
         }
@@ -444,6 +455,10 @@ void render() {
             // TODO: main menu logic
             break;
         }
+        case STATE::SETTINGS: {
+            // TODO: main menu logic
+            break;
+        }
         case STATE::LOADOUTSELECT: {
             // TODO: loadout select logic
             break;
@@ -504,6 +519,10 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
             if (key.key == SDLK_ESCAPE) {
                 currentState = STATE::TITLESCREEN;
             }
+            break;
+        }
+        case STATE::SETTINGS: {
+            // TODO: main menu logic
             break;
         }
         case STATE::LOADOUTSELECT: {
@@ -602,6 +621,10 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
                 // TODO: main menu logic
                 break;
             }
+            case STATE::SETTINGS: {
+                // TODO: main menu logic
+                break;
+            }
             case STATE::LOADOUTSELECT: {
                 // TODO: loadout select logic
                 break;
@@ -643,9 +666,6 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
                 break;
             }
         }
-    }
-    if (mouse.button == SDL_BUTTON_LEFT) {
-        
     }
 }
 
@@ -749,12 +769,12 @@ int main(int argc, char* argv[]) {
     }
 
     //* load config, assets and general set up calls
-    setUpButtons();
     settings = loadJson(path + "/data/config/settings.json");
     loadMusic();
     loadSounds();
     loadTextures();
-
+    setUpButtons();
+    
     SDL_Event event;
     bool running    = true;
     uint64_t lastTicks   = SDL_GetTicks();
@@ -819,5 +839,5 @@ int main(int argc, char* argv[]) {
 
 //! Current Bugs/Errors:
 /*
-! Button Does Not Detect press! (Main Title Menu)
+! 
 */

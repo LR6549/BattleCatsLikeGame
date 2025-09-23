@@ -36,7 +36,11 @@ struct Button {
         }
         SDL_Texture* tex = it->second;
 
-        SDL_GetTextureSize(tex, &b_w, &b_h);
+        if (!SDL_GetTextureSize(tex, &b_w, &b_h)) {
+            log("ERROR Button Texture Size: ", "Could not get Button Texture Size!", LOGTYPE::ERROR);
+        } else {
+            log("BUTTON SIZE: ", (std::to_string(b_w) + ", " + std::to_string(b_h)), LOGTYPE::INFO);
+        }
     }
 
     bool isPressed(float mouseX, float mouseY) {
