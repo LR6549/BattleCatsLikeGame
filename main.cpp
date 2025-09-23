@@ -65,17 +65,64 @@ bool isPaused = false;
 
 STATE currentState  = STATE::TITLESCREEN;
 STATE lastState     = STATE::NONE;
-STATE previousState = STATE::NONE;
 
 float scaleMousePositionFactorX = 2.0f;
 float scaleMousePositionFactorY = 2.0f;
 
+//* Returns the name of the given State
+std::string getStateName(STATE& pState) {
+    switch(pState) {
+        case STATE::TITLESCREEN: {
+            return "title";
+        }
+        case STATE::MAINMENU: {
+            return "menu";
+        }
+        case STATE::SETTINGS: {
+            return "settings";
+        }
+        case STATE::LOADOUTSELECT: {
+            return "loadout";
+        }
+        case STATE::UPGRADEUNIT: {
+            return "upgrade";
+        }
+        case STATE::WORLDSELECT: {
+            return "world";
+        }
+        case STATE::LEVELSELECT: {
+            return "level";
+        }
+        case STATE::LEVELPLAY: {
+            return "play";
+        }
+        case STATE::BANNERSELECT: {
+            return "banner";
+        }
+        case STATE::ROLLBANNER: {
+            return "roll";
+            break;
+        }
+        case STATE::STORAGEUNITS: {
+            return "sUnit";
+        }
+        case STATE::STORAGEMATERIAL: {
+            return "sMaterial";
+        }
+        default: {
+            return "";
+        }
+    }
+}
+
 //* Puts all buttons in the button map
 void setUpButtons() {
-    buttonMap.emplace("", std::make_unique<Button>("", 0.0f, 0.0f, "NONE"));
-    buttonMap.emplace("TitleScreenPlay", std::make_unique<Button>("titleScreenPlayBTN", 737.0f, 420.0f, "TitleScreenPlay"));
+    /*
+    * buttonMap.emplace("", std::make_unique<Button>("textureName", 0.0f, 0.0f, "ButtonName"));
+    */
+    buttonMap.emplace("TitleScreenPlay",     std::make_unique<Button>("titleScreenPlayBTN", 737.0f, 420.0f, "TitleScreenPlay"));
     buttonMap.emplace("TitleScreenSettings", std::make_unique<Button>("titleScreenSettingsBTN", 737.0f, 585.0f, "TitleScreenSettings"));
-    buttonMap.emplace("TitleScreenQuit", std::make_unique<Button>("titleScreenQuitBTN", 737.0f, 740.0f, "TitleScreenQuit"));
+    buttonMap.emplace("TitleScreenQuit",     std::make_unique<Button>("titleScreenQuitBTN", 737.0f, 740.0f, "TitleScreenQuit"));
 }
 
 //* Load JSON from file and return as parsed json object
@@ -256,6 +303,11 @@ static void playMusic(std::string musicName) {
         return;
     }
 
+    if (MIX_GetTrackAudio(musicTrack) == audio) {
+        log("Already Playing Music: ", ("The Music Called to play was already playing [" + musicName + "]"), LOGTYPE::INFO);
+        return;
+    }
+
     //* assign audio to track
     MIX_SetTrackAudio(musicTrack, audio);
 
@@ -343,7 +395,7 @@ void initState() {
                 break;
             }
         }
-        previousState = currentState;
+        
         lastState = currentState;
     }
 }
@@ -508,6 +560,8 @@ void render() {
 
 //* Handle keyboard input events
 void handleKeyboardInput(const SDL_KeyboardEvent& key) {
+    log("Pressed: ", SDL_GetScancodeName(key.scancode), LOGTYPE::INFO);
+
     switch (currentState) {
         case STATE::TITLESCREEN: {
             // TODO: title screen logic
@@ -523,6 +577,9 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
         }
         case STATE::SETTINGS: {
             // TODO: main menu logic
+            if (key.key == SDLK_ESCAPE) {
+                currentState = STATE::TITLESCREEN;
+            }
             break;
         }
         case STATE::LOADOUTSELECT: {
@@ -591,7 +648,6 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
             break;
         }
     }
-    log("Pressed: ", SDL_GetScancodeName(key.scancode), LOGTYPE::INFO);
 }
 
 //* Handle mouse input events
