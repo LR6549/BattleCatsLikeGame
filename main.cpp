@@ -509,6 +509,7 @@ void render() {
         }
         case STATE::SETTINGS: {
             // TODO: main menu logic
+            drawTexture("settingsBackground");
             break;
         }
         case STATE::LOADOUTSELECT: {
