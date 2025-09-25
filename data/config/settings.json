@@ -3,5 +3,6 @@
     "volume": {
         "music": 100,
         "sfx": 100
-    }
+    },
+    "fullscreen":false
 }
