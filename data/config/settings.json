@@ -1,8 +1,8 @@
 {
-    "frameRate":144,
-
+    "frameRate": 144,
     "volume": {
-        "music":50,
-        "sfx":100
+        "SFX": 105,
+        "music": 100,
+        "sfx": 100
     }
 }

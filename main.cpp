@@ -117,12 +117,22 @@ std::string getStateName(STATE& pState) {
 
 //* Puts all buttons in the button map
 void setUpButtons() {
-    /*
-    * buttonMap.emplace("", std::make_unique<Button>("textureName", 0.0f, 0.0f, "ButtonName"));
-    */
+    //*  buttonMap.emplace("mapKey", std::make_unique<Button>("textureName", 0.0f, 0.0f, "ButtonName"));
+
+    //* TITLE SCREEN
     buttonMap.emplace("TitleScreenPlay",     std::make_unique<Button>("titleScreenPlayBTN", 737.0f, 420.0f, "TitleScreenPlay"));
     buttonMap.emplace("TitleScreenSettings", std::make_unique<Button>("titleScreenSettingsBTN", 737.0f, 585.0f, "TitleScreenSettings"));
     buttonMap.emplace("TitleScreenQuit",     std::make_unique<Button>("titleScreenQuitBTN", 737.0f, 740.0f, "TitleScreenQuit"));
+
+    //* MAIN MENU
+
+
+    //* SETTINGS
+    buttonMap.emplace("SettingsMusicPlus",  std::make_unique<Button>("SettingsMusicPlusBTN", 407.0f, 418.0f, "SettingsMusicPlus"));
+    buttonMap.emplace("SettingsMusicMinus", std::make_unique<Button>("SettingsMusicMinusBTN", 196.0f, 418.0f, "SettingsMusicMinus"));
+    buttonMap.emplace("SettingsSFXPlus",    std::make_unique<Button>("SettingsSFXPlusBTN", 407.0f, 629.0f, "SettingsSFXPlus"));
+    buttonMap.emplace("SettingsSFXMinus",   std::make_unique<Button>("SettingsSFXMinusBTN", 196.0f, 629.0f, "SettingsSFXMinus"));
+
 }
 
 //* Load JSON from file and return as parsed json object
@@ -502,6 +512,11 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool 
     }
 }
 
+//* Draw a Text at a given location
+void drawText(std::string text, int fontSize, float x = 0, float y = 0, int orientation = 0, bool shadow = false) {
+
+}
+
 //* Render function (main drawing function for a frame)
 void render() {
     switch (currentState) {
@@ -520,6 +535,10 @@ void render() {
         case STATE::SETTINGS: {
             // TODO: main menu logic
             drawTexture("settingsBackground");
+            buttonMap.at("SettingsMusicPlus")->render();
+            buttonMap.at("SettingsMusicMinus")->render();
+            buttonMap.at("SettingsSFXPlus")->render();
+            buttonMap.at("SettingsSFXMinus")->render();
             break;
         }
         case STATE::LOADOUTSELECT: {
@@ -690,6 +709,35 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
             }
             case STATE::SETTINGS: {
                 // TODO: main menu logic
+                if (buttonMap.at("SettingsMusicPlus")->isPressed(mouseX, mouseY)) {
+                    if (settings["volume"]["music"].get<int>() >= 200) {
+                        settings["volume"]["music"] = 200;
+                    } else {
+                        settings["volume"]["music"] = settings["volume"]["music"].get<int>() + 5;
+                    }
+                } else if (buttonMap.at("SettingsMusicMinus")->isPressed(mouseX, mouseY)) {
+                    if (settings["volume"]["music"].get<int>() <= 0) {
+                        settings["volume"]["music"] = 0;
+                    } else {
+                        settings["volume"]["music"] = settings["volume"]["music"].get<int>() - 5;
+                    }
+                } else if (buttonMap.at("SettingsSFXPlus")->isPressed(mouseX, mouseY)) {
+                    if (settings["volume"]["sfx"].get<int>() >= 200) {
+                        settings["volume"]["sfx"] = 200;
+                    } else {
+                        settings["volume"]["SFX"] = settings["volume"]["sfx"].get<int>() + 5;
+                    }
+                } else if (buttonMap.at("SettingsSFXMinus")->isPressed(mouseX, mouseY)) {
+                    if (settings["volume"]["sfx"].get<int>() <= 0) {
+                        settings["volume"]["sfx"] = 0;
+                    } else {
+                        settings["volume"]["sfx"] = settings["volume"]["sfx"].get<int>() - 5;
+                    }
+                }
+                buttonMap.at("SettingsMusicPlus")->render();
+                buttonMap.at("SettingsMusicMinus")->render();
+                buttonMap.at("SettingsSFXPlus")->render();
+                buttonMap.at("SettingsSFXMinus")->render();
                 break;
             }
             case STATE::LOADOUTSELECT: {
