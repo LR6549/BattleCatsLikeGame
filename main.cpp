@@ -14,6 +14,7 @@
 #include "logging.hpp"
 #include "aabbCollision.hpp"
 #include "buttonStruct.hpp"
+#include "colorStruct.hpp"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -28,6 +29,10 @@ SDL_Texture*    renderTexture = nullptr;
 MIX_Mixer*      musicMixer = nullptr;
 MIX_Mixer*      soundMixer = nullptr;
 MIX_Track*      musicTrack = nullptr;
+
+//* Fonts
+TTF_Font* font              = nullptr;
+TTF_Font* fontBold          = nullptr;
 
 //* Window Configs
 std::string title = "BattleCatsLike";
@@ -155,6 +160,15 @@ void saveJson(std::string pathToJson, json& j, std::string jsonName = "") {
     }
 
     file << j.dump(4);
+}
+
+TTF_Font* loadFont(const std::string& pathToFont) {
+    TTF_Font* tempFont = TTF_OpenFont(pathToFont.c_str(), 32);
+    if (!tempFont) {
+        log("Failed to load font ", (pathToFont + ", " + SDL_GetError()), LOGTYPE::ERROR);
+        exit(1);
+    }
+    return tempFont;
 }
 
 //* Load all music files from "data/music/" into musicMap
@@ -512,9 +526,78 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool 
     }
 }
 
-//* Draw a Text at a given location
-void drawText(std::string text, int fontSize, float x = 0, float y = 0, int orientation = 0, bool shadow = false) {
+//* Draw a Text at a given location | Orientations: -1 = left, 0 = center, 1 = right
+void drawText(std::string text, int fontSize, float x = 0, float y = 0, Color color = COLORS::WHITE, TTF_Font* fontPtr = font, int orientation = 0, bool outline = false) {
+    if (!fontPtr) {
+        log("Font Not Loaded: ", "", LOGTYPE::ERROR);
+        return;
+    }
 
+    SDL_Color sdlColor = {color.c_r, color.c_g, color.c_b, color.c_a };
+
+    // Render text to a surface
+    SDL_Surface* surface = TTF_RenderText_Blended(fontPtr, text.c_str(), text.size(), sdlColor);
+    if (!surface) {
+        SDL_Log("Failed to render text: %s", SDL_GetError());
+        return;
+    }
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_DestroySurface(surface);
+
+    if (!texture) {
+        SDL_Log("Failed to create text texture: %s", SDL_GetError());
+        return;
+    }
+
+    float textW, textH;
+    SDL_GetTextureSize(texture, &textW, &textH);
+
+    // Position based on orientation
+    SDL_FRect dstRect;
+    dstRect.w = (float)textW;
+    dstRect.h = (float)textH;
+
+    if (orientation == 0)       dstRect.x = x - (textW / 2.0f);
+    else if (orientation == 1)  dstRect.x = x - textW;
+    else                        dstRect.x = x;
+
+    dstRect.y = y;
+
+    // Shadow first 
+    if (outline) {
+        SDL_Surface* outlineSurface = TTF_RenderText_Blended(font, text.c_str(), text.size(), {0, 0, 0, 255});
+        SDL_Texture* outlineTexture = SDL_CreateTextureFromSurface(renderer, outlineSurface);
+        SDL_DestroySurface(outlineSurface);
+
+        if (outlineTexture) {
+            SDL_FRect outlineRect = dstRect;
+
+            //* Offset in relation der fontSize
+            float offset = fontSize / 6.5f;
+
+            //* Liste aller Richtungen der Textur
+            const SDL_FPoint offsets[] = {
+                {-offset, -offset}, {0, -offset}, {offset, -offset},
+                {-offset,  0},                  {offset,  0},
+                {-offset,  offset}, {0,  offset}, {offset,  offset}
+            };
+
+            for (auto& o : offsets) {
+                outlineRect.x = dstRect.x + o.x;
+                outlineRect.y = dstRect.y + o.y;
+                SDL_RenderTexture(renderer, outlineTexture, nullptr, &outlineRect);
+            }
+
+            SDL_DestroyTexture(outlineTexture);
+        }
+    }
+
+
+    //* Draw FG text
+    SDL_RenderTexture(renderer, texture, nullptr, &dstRect);
+
+    SDL_DestroyTexture(texture);
 }
 
 //* Render function (main drawing function for a frame)
@@ -535,10 +618,17 @@ void render() {
         case STATE::SETTINGS: {
             // TODO: main menu logic
             drawTexture("settingsBackground");
+
+            //* Music Settings
             buttonMap.at("SettingsMusicPlus")->render();
             buttonMap.at("SettingsMusicMinus")->render();
+            drawText((std::to_string(settings["volume"]["music"].get<int>()) + "%"), 32, 370, 417, COLORS::SETTINGSCOLOR, fontBold, 1, true);
+
+            //* SFX Settings
             buttonMap.at("SettingsSFXPlus")->render();
             buttonMap.at("SettingsSFXMinus")->render();
+            drawText((std::to_string(settings["volume"]["sfx"].get<int>()) + "%"),   32, 370, 627, COLORS::SETTINGSCOLOR, fontBold, 1, true);
+
             break;
         }
         case STATE::LOADOUTSELECT: {
@@ -725,7 +815,7 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
                     if (settings["volume"]["sfx"].get<int>() >= 200) {
                         settings["volume"]["sfx"] = 200;
                     } else {
-                        settings["volume"]["SFX"] = settings["volume"]["sfx"].get<int>() + 5;
+                        settings["volume"]["sfx"] = settings["volume"]["sfx"].get<int>() + 5;
                     }
                 } else if (buttonMap.at("SettingsSFXMinus")->isPressed(mouseX, mouseY)) {
                     if (settings["volume"]["sfx"].get<int>() <= 0) {
@@ -786,6 +876,8 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
 
 //* Cleanup all loaded resources and shutdown SDL properly
 void cleanUp() {
+    log("Running CleanUp: ", "", LOGTYPE::SUCCESS);
+
     //* Save Json's
     saveJson((path+"/data/config/settings.json"), settings, "Settings");
 
@@ -816,12 +908,18 @@ void cleanUp() {
         musicMixer = nullptr;
     }
 
+    //* Cleanup Fonts
+    TTF_CloseFont(font);
+    TTF_CloseFont(fontBold);
+
+
     //* Destroy rendering objects and quit SDL subsystems
     if (renderTexture) SDL_DestroyTexture(renderTexture);
     if (renderer) SDL_DestroyRenderer(renderer);
     if (window) SDL_DestroyWindow(window);
 
     MIX_Quit();
+    TTF_Quit();
     SDL_Quit();
 }
 
@@ -886,8 +984,22 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    if (!TTF_Init()) {
+        log("TTF_Init failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        return 1;
+    }
+
     //* load config, assets and general set up calls
     settings = loadJson(path + "/data/config/settings.json");
+    std::string fontPath = path + "data/fonts/winterLemon.ttf";
+    font            = loadFont(fontPath);
+    fontBold        = loadFont(fontPath);
+    if (!font || !fontBold) {
+        log("Could not load Font: ", (fontPath), LOGTYPE::ERROR);
+        cleanUp();
+        return -1;
+    }
+    TTF_SetFontStyle(fontBold, TTF_STYLE_BOLD);
     loadMusic();
     loadSounds();
     loadTextures();
@@ -951,6 +1063,8 @@ int main(int argc, char* argv[]) {
         SDL_RenderPresent(renderer);
 
     }
+
+    cleanUp();
 
     return 0;
 }
