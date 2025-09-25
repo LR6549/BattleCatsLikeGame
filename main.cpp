@@ -137,6 +137,16 @@ json loadJson(std::string pathToJson) {
     return j;
 }
 
+void saveJson(std::string pathToJson, json& j, std::string jsonName = "") {
+    std::ofstream file(pathToJson);
+
+    if (!file.is_open()) {
+        log("JSON COULD NOT BE SAVED: ", (jsonName + " could not be opened!"), LOGTYPE::ERROR);
+    }
+
+    file << j.dump(4);
+}
+
 //* Load all music files from "data/music/" into musicMap
 int loadMusic() {
     std::string musicFolderPath = path + "data/music/";
@@ -728,6 +738,9 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
 
 //* Cleanup all loaded resources and shutdown SDL properly
 void cleanUp() {
+    //* Save Json's
+    saveJson((path+"/data/config/settings.json"), settings, "Settings");
+
     //* Cleanup textures
     for (auto& [name, tex] : textureMap) {
         SDL_DestroyTexture(tex);
