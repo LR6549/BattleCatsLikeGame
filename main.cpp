@@ -11,8 +11,9 @@
 #include <SDL3/SDL3_ttf/SDL_ttf.h>
 #include <SDL3/SDL3_rtf/SDL_rtf.h>
 #include <SDL3/SDL3_net/SDL_net.h>
-#include "logging.hpp"
-#include "aabbCollision.hpp"
+#include <JFLX/logging.hpp>
+#include <JFLX/jsonFunctionality.hpp>
+#include <JFLX/collision.hpp>
 #include "buttonStruct.hpp"
 #include "colorStruct.hpp"
 
@@ -138,28 +139,6 @@ void setUpButtons() {
     buttonMap.emplace("SettingsSFXPlus",    std::make_unique<Button>("SettingsSFXPlusBTN", 407.0f, 629.0f, "SettingsSFXPlus"));
     buttonMap.emplace("SettingsSFXMinus",   std::make_unique<Button>("SettingsSFXMinusBTN", 196.0f, 629.0f, "SettingsSFXMinus"));
 
-}
-
-//* Load JSON from file and return as parsed json object
-json loadJson(std::string pathToJson) {
-    std::ifstream inputFile(pathToJson);
-    if (!inputFile.is_open()) {
-        log("Failed to open ", pathToJson, LOGTYPE::ERROR);
-        exit(1);
-    }
-    json j;
-    inputFile >> j;
-    return j;
-}
-
-void saveJson(std::string pathToJson, json& j, std::string jsonName = "") {
-    std::ofstream file(pathToJson);
-
-    if (!file.is_open()) {
-        log("JSON COULD NOT BE SAVED: ", (jsonName + " could not be opened!"), LOGTYPE::ERROR);
-    }
-
-    file << j.dump(4);
 }
 
 TTF_Font* loadFont(const std::string& pathToFont) {
@@ -879,7 +858,9 @@ void cleanUp() {
     log("Running CleanUp: ", "", LOGTYPE::SUCCESS);
 
     //* Save Json's
-    saveJson((path+"/data/config/settings.json"), settings, "Settings");
+    if (saveJson((path+"/data/config/settings.json"), settings)) {
+        log("Saved Json", "Successfully Saved Settings.json", LOGTYPE::SUCCESS);
+    }
 
     //* Cleanup textures
     for (auto& [name, tex] : textureMap) {
@@ -926,13 +907,14 @@ void cleanUp() {
 int main(int argc, char* argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         log("SDL_Init Error: ", SDL_GetError(), LOGTYPE::ERROR);
+        cleanUp();
         return 1;
     }
 
     window = SDL_CreateWindow(title.c_str(), windowWidth, windowHeight, SDL_WINDOW_RESIZABLE);
     if (!window) {
         log("SDL_CreateWindow failed: ", SDL_GetError(), LOGTYPE::ERROR);
-        SDL_Quit();
+        cleanUp();
         return 1;
     }
 
@@ -940,25 +922,20 @@ int main(int argc, char* argv[]) {
     renderer = SDL_CreateRenderer(window, nullptr);
     if (!renderer) {
         log("SDL_CreateRenderer failed: ", SDL_GetError(), LOGTYPE::ERROR);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+        cleanUp();
         return 1;
     }
     
     renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, virtualWidth, virtualHeight);
     if (!renderTexture) {
         log("SDL_CreateTexture failed: ", SDL_GetError(), LOGTYPE::ERROR);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+        cleanUp();
         return 1;
     }
 
     if (!MIX_Init()) {
         log("Failed to init SDL_mixer: ", SDL_GetError(), LOGTYPE::ERROR);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+        cleanUp();
         return 1;
     }
 
@@ -966,31 +943,22 @@ int main(int argc, char* argv[]) {
     musicMixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
     if (!musicMixer) {
         log("MIX_CreateMixerDevice failed: ", SDL_GetError(), LOGTYPE::ERROR);
-        MIX_Quit();
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+        cleanUp();
         return 1;
     }
 
     musicTrack = MIX_CreateTrack(musicMixer);
     if (!musicTrack) {
         log("MIX_CreateTrack failed: ", SDL_GetError(), LOGTYPE::ERROR);
-        if (musicMixer) MIX_DestroyMixer(musicMixer);
-        MIX_Quit();
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+        cleanUp();
         return 1;
     }
 
     if (!TTF_Init()) {
         log("TTF_Init failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        cleanUp();
         return 1;
     }
-
-    //* load config, assets and general set up calls
-    settings = loadJson(path + "/data/config/settings.json");
     std::string fontPath = path + "data/fonts/winterLemon.ttf";
     font            = loadFont(fontPath);
     fontBold        = loadFont(fontPath);
@@ -1000,6 +968,12 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     TTF_SetFontStyle(fontBold, TTF_STYLE_BOLD);
+    
+    //* load config, assets and general set up calls
+    if (!loadJson(path + "/data/config/settings.json", settings)) {
+        cleanUp();
+        return 1;
+    }
     loadMusic();
     loadSounds();
     loadTextures();

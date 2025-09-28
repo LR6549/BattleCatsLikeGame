@@ -3,8 +3,8 @@
 
 #include <string>
 #include <SDL3/SDL.h>
-#include "logging.hpp"
-#include "aabbCollision.hpp"
+#include <JFLX/logging.hpp>
+#include <JFLX/collision.hpp>
 
 extern std::unordered_map<std::string, SDL_Texture*> textureMap;
 
@@ -44,7 +44,7 @@ struct Button {
     }
 
     bool isPressed(float mouseX, float mouseY) {
-        bool pressed = aabbCollision(b_x, b_y, b_w, b_h, mouseX, mouseY);
+        bool pressed = aabb::inBounds(b_x, b_y, b_w, b_h, mouseX, mouseY);
 
         if (pressed) {
             log("Pressed Button: ", b_buttonName, LOGTYPE::INFO);
