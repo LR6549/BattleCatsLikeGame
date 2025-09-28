@@ -144,7 +144,7 @@ void setUpButtons() {
 TTF_Font* loadFont(const std::string& pathToFont) {
     TTF_Font* tempFont = TTF_OpenFont(pathToFont.c_str(), 32);
     if (!tempFont) {
-        log("Failed to load font ", (pathToFont + ", " + SDL_GetError()), LOGTYPE::ERROR);
+        JFLX::log("Failed to load font ", (pathToFont + ", " + SDL_GetError()), JFLX::LOGTYPE::ERROR);
         exit(1);
     }
     return tempFont;
@@ -155,7 +155,7 @@ int loadMusic() {
     std::string musicFolderPath = path + "data/music/";
 
     if (!fs::exists(musicFolderPath)) {
-        log("Music folder does not exist: ", musicFolderPath, LOGTYPE::ERROR);
+        JFLX::log("Music folder does not exist: ", musicFolderPath, JFLX::LOGTYPE::ERROR);
         return 0;
     }
 
@@ -164,17 +164,17 @@ int loadMusic() {
             std::string tempPath = dir.path().string();
             std::string tempName = dir.path().stem().string();
 
-            log("Music:", (tempName + " in " + tempPath), LOGTYPE::INFO);
+            JFLX::log("Music:", (tempName + " in " + tempPath), JFLX::LOGTYPE::INFO);
             
             //* Load Audio from file (not streamed)
             MIX_Audio* audio = MIX_LoadAudio(musicMixer, tempPath.c_str(), false);
             if (!audio) {
-                log("Failed to load music from: ", (tempPath + "; " + SDL_GetError()), LOGTYPE::ERROR);
+                JFLX::log("Failed to load music from: ", (tempPath + "; " + SDL_GetError()), JFLX::LOGTYPE::ERROR);
                 continue;
             }
             
             musicMap[tempName] = audio;
-            log("Loaded Music: ", (tempPath + " as " + tempName), LOGTYPE::SUCCESS);
+            JFLX::log("Loaded Music: ", (tempPath + " as " + tempName), JFLX::LOGTYPE::SUCCESS);
         }
     }
 
@@ -186,7 +186,7 @@ int loadSounds() {
     std::string soundFolderPath = path + "data/sounds/";
 
     if (!fs::exists(soundFolderPath)) {
-        log("Sound folder does not exist: ", soundFolderPath.c_str());
+        JFLX::log("Sound folder does not exist: ", soundFolderPath.c_str());
         return 0;
     }
 
@@ -195,17 +195,17 @@ int loadSounds() {
             std::string tempPath = dir.path().string();
             std::string tempName = dir.path().stem().string();
 
-            log("Sound: ", (tempName + " in " + tempPath), LOGTYPE::INFO);
+            JFLX::log("Sound: ", (tempName + " in " + tempPath), JFLX::LOGTYPE::INFO);
             
             //* Load Audio from file (not streamed)
             MIX_Audio* audio = MIX_LoadAudio(musicMixer, tempPath.c_str(), false);
             if (!audio) {
-                log("Failed to load sound from: ", (tempPath + "; " + SDL_GetError()), LOGTYPE::ERROR);
+                JFLX::log("Failed to load sound from: ", (tempPath + "; " + SDL_GetError()), JFLX::LOGTYPE::ERROR);
                 continue;
             }
 
             soundMap[tempName] = audio;
-            log("Loaded Sound: ", (tempPath + " as " + tempName), LOGTYPE::SUCCESS);
+            JFLX::log("Loaded Sound: ", (tempPath + " as " + tempName), JFLX::LOGTYPE::SUCCESS);
         }
     }
 
@@ -217,7 +217,7 @@ int loadTextures() {
     std::string textureFolderPath = path + "data/textures/";
 
     if (!fs::exists(textureFolderPath)) {
-        log("Texture folder does not exist: ", textureFolderPath, LOGTYPE::INFO);
+        JFLX::log("Texture folder does not exist: ", textureFolderPath, JFLX::LOGTYPE::INFO);
         return 0;
     }
 
@@ -226,17 +226,17 @@ int loadTextures() {
             std::string tempPath = dir.path().string();
             std::string tempName = dir.path().stem().string();
 
-            log("Texture: ", (tempName + " in " + tempPath), LOGTYPE::INFO);
+            JFLX::log("Texture: ", (tempName + " in " + tempPath), JFLX::LOGTYPE::INFO);
 
             //* load Texture from file
             SDL_Texture* tex = IMG_LoadTexture(renderer, tempPath.c_str());
             if (!tex) {
-                log("Failed to load texture: ", SDL_GetError(), LOGTYPE::ERROR);
+                JFLX::log("Failed to load texture: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
                 continue;
             }
 
             textureMap[tempName] = tex;
-            log("Loaded Texture: ", (tempPath + " in " + tempName), LOGTYPE::SUCCESS);
+            JFLX::log("Loaded Texture: ", (tempPath + " in " + tempName), JFLX::LOGTYPE::SUCCESS);
         }
     }
 
@@ -282,15 +282,15 @@ void playSound(const std::string& soundName) {
     //* check if sound Exists
     auto it = soundMap.find(soundName);
     if (it == soundMap.end()) {
-        log("Sound not found: ", soundName.c_str());
+        JFLX::log("Sound not found: ", soundName.c_str());
         return;
     }
     MIX_Audio* audio = it->second;
 
     if (!MIX_PlayAudio(soundMixer, audio)) {
-        log("Played sound: ", soundName.c_str());
+        JFLX::log("Played sound: ", soundName.c_str());
     } else {
-        log("MIX_PlayAudio failed: ", SDL_GetError());
+        JFLX::log("MIX_PlayAudio failed: ", SDL_GetError());
     }
 }
 
@@ -306,18 +306,18 @@ static void playMusic(std::string musicName) {
     //* check if music Exists
     auto it = musicMap.find(musicName);
     if (it == musicMap.end()) {
-        log("Music not found: ", musicName.c_str());
+        JFLX::log("Music not found: ", musicName.c_str());
         return;
     }
     MIX_Audio* audio = it->second;
 
     if (!musicTrack) {
-        log("Music track not initialized", "", LOGTYPE::ERROR);
+        JFLX::log("Music track not initialized", "", JFLX::LOGTYPE::ERROR);
         return;
     }
 
     if (MIX_GetTrackAudio(musicTrack) == audio) {
-        log("Already Playing Music: ", ("The Music Called to play was already playing [" + musicName + "]"), LOGTYPE::INFO);
+        JFLX::log("Already Playing Music: ", ("The Music Called to play was already playing [" + musicName + "]"), JFLX::LOGTYPE::INFO);
         return;
     }
 
@@ -331,12 +331,12 @@ static void playMusic(std::string musicName) {
 
     if (MIX_PlayTrack(musicTrack, options)) {
         if (MIX_TrackPlaying(musicTrack)) {
-            log("Playing music: ", musicName, LOGTYPE::SUCCESS);
+            JFLX::log("Playing music: ", musicName, JFLX::LOGTYPE::SUCCESS);
         } else {
-            log("Track Not Playing: ", SDL_GetError(), LOGTYPE::ERROR);
+            JFLX::log("Track Not Playing: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         }
     } else {
-        log("MIX_PlayTrack failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("MIX_PlayTrack failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
     }
     SDL_DestroyProperties(options);
 }
@@ -480,7 +480,7 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool 
     //* check if texture Exists
     auto it = textureMap.find(textureName);
     if (it == textureMap.end()) {
-        log("Texture not found: ", textureName, LOGTYPE::ERROR);
+        JFLX::log("Texture not found: ", textureName, JFLX::LOGTYPE::ERROR);
         return;
     }
     SDL_Texture* tex = it->second;
@@ -488,7 +488,7 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool 
     //* try to get texture size
     float texW = 0, texH = 0;
     if (!SDL_GetTextureSize(tex, &texW, &texH)) {
-        log("SDL_GetTextureSize failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("SDL_GetTextureSize failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         return;
     }
 
@@ -501,14 +501,14 @@ void drawTexture(const std::string& textureName, float x = 0, float y = 0, bool 
     SDL_FlipMode flipOrientation = flipTexture ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
 
     if (!SDL_RenderTextureRotated(renderer, tex, nullptr, &dst, 0.0, nullptr, flipOrientation)) {
-        log("SDL_RenderTexture failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("SDL_RenderTexture failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
     }
 }
 
 //* Draw a Text at a given location | Orientations: -1 = left, 0 = center, 1 = right
 void drawText(std::string text, int fontSize, float x = 0, float y = 0, Color color = COLORS::WHITE, TTF_Font* fontPtr = font, int orientation = 0, bool outline = false) {
     if (!fontPtr) {
-        log("Font Not Loaded: ", "", LOGTYPE::ERROR);
+        JFLX::log("Font Not Loaded: ", "", JFLX::LOGTYPE::ERROR);
         return;
     }
 
@@ -517,7 +517,7 @@ void drawText(std::string text, int fontSize, float x = 0, float y = 0, Color co
     // Render text to a surface
     SDL_Surface* surface = TTF_RenderText_Blended(fontPtr, text.c_str(), text.size(), sdlColor);
     if (!surface) {
-        SDL_Log("Failed to render text: %s", SDL_GetError());
+        JFLX::log("Failed to render text: ", SDL_GetError(),  JFLX::LOGTYPE::ERROR);
         return;
     }
 
@@ -525,7 +525,7 @@ void drawText(std::string text, int fontSize, float x = 0, float y = 0, Color co
     SDL_DestroySurface(surface);
 
     if (!texture) {
-        SDL_Log("Failed to create text texture: %s", SDL_GetError());
+        JFLX::log("Failed to create text texture: ", SDL_GetError(),  JFLX::LOGTYPE::ERROR);
         return;
     }
 
@@ -659,7 +659,7 @@ void render() {
 
 //* Handle keyboard input events
 void handleKeyboardInput(const SDL_KeyboardEvent& key) {
-    log("Pressed: ", SDL_GetScancodeName(key.scancode), LOGTYPE::INFO);
+    JFLX::log("Pressed: ", SDL_GetScancodeName(key.scancode), JFLX::LOGTYPE::INFO);
 
     switch (currentState) {
         case STATE::TITLESCREEN: {
@@ -756,7 +756,7 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
         float mouseX = mouse.x * scaleMousePositionFactorX;
         float mouseY = mouse.y * scaleMousePositionFactorY;
 
-        log("Left Click at:", (std::to_string(mouseX) + ", " + std::to_string(mouseY)), LOGTYPE::INFO);
+        JFLX::log("Left Click at:", (std::to_string(mouseX) + ", " + std::to_string(mouseY)), JFLX::LOGTYPE::INFO);
 
         switch (currentState) {
             case STATE::TITLESCREEN: {
@@ -855,11 +855,11 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
 
 //* Cleanup all loaded resources and shutdown SDL properly
 void cleanUp() {
-    log("Running CleanUp: ", "", LOGTYPE::SUCCESS);
+    JFLX::log("Running CleanUp: ", "", JFLX::LOGTYPE::SUCCESS);
 
     //* Save Json's
-    if (saveJson((path+"/data/config/settings.json"), settings)) {
-        log("Saved Json", "Successfully Saved Settings.json", LOGTYPE::SUCCESS);
+    if (JFLX::saveJson((path+"/data/config/settings.json"), settings)) {
+        JFLX::log("Saved Json", "Successfully Saved Settings.json", JFLX::LOGTYPE::SUCCESS);
     }
 
     //* Cleanup textures
@@ -906,14 +906,14 @@ void cleanUp() {
 
 int main(int argc, char* argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
-        log("SDL_Init Error: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("SDL_Init Error: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
 
     window = SDL_CreateWindow(title.c_str(), windowWidth, windowHeight, SDL_WINDOW_RESIZABLE);
     if (!window) {
-        log("SDL_CreateWindow failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("SDL_CreateWindow failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
@@ -921,20 +921,20 @@ int main(int argc, char* argv[]) {
     // create a renderer (index -1 = first, flags = accelerated+vsync recommended)
     renderer = SDL_CreateRenderer(window, nullptr);
     if (!renderer) {
-        log("SDL_CreateRenderer failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("SDL_CreateRenderer failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
     
     renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, virtualWidth, virtualHeight);
     if (!renderTexture) {
-        log("SDL_CreateTexture failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("SDL_CreateTexture failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
 
     if (!MIX_Init()) {
-        log("Failed to init SDL_mixer: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("Failed to init SDL_mixer: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
@@ -942,20 +942,20 @@ int main(int argc, char* argv[]) {
     // Create a musicMixer attached to the default playback device (let SDL decide format)
     musicMixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
     if (!musicMixer) {
-        log("MIX_CreateMixerDevice failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("MIX_CreateMixerDevice failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
 
     musicTrack = MIX_CreateTrack(musicMixer);
     if (!musicTrack) {
-        log("MIX_CreateTrack failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("MIX_CreateTrack failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
 
     if (!TTF_Init()) {
-        log("TTF_Init failed: ", SDL_GetError(), LOGTYPE::ERROR);
+        JFLX::log("TTF_Init failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
@@ -963,14 +963,14 @@ int main(int argc, char* argv[]) {
     font            = loadFont(fontPath);
     fontBold        = loadFont(fontPath);
     if (!font || !fontBold) {
-        log("Could not load Font: ", (fontPath), LOGTYPE::ERROR);
+        JFLX::log("Could not load Font: ", (fontPath), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return -1;
     }
     TTF_SetFontStyle(fontBold, TTF_STYLE_BOLD);
     
     //* load config, assets and general set up calls
-    if (!loadJson(path + "/data/config/settings.json", settings)) {
+    if (!JFLX::loadJson(path + "/data/config/settings.json", settings)) {
         cleanUp();
         return 1;
     }
