@@ -6,7 +6,7 @@ echo setting up compile command and flags
 :: Compiler und Flags setzen
 set compiler=g++
 set FLAGS= 
-set exeName=BattleCatsLike
+set exeName=Furfront
 :: Alle benötigten SFML Module sowie Abhängigkeiten verlinken
 set linkingFlags=-lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_rtf -lSDL3_ttf -lfreetype -lharfbuzz -luser32 -lgdi32 -lole32 -luuid -loleaut32 -limm32 -ldinput8 -lwinmm -lshell32 -lsetupapi -lversion -lwininet -lws2_32
 

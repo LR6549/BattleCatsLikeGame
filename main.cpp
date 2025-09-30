@@ -36,7 +36,7 @@ TTF_Font* font              = nullptr;
 TTF_Font* fontBold          = nullptr;
 
 //* Window Configs
-std::string title = "BattleCatsLike";
+std::string title = "Furfront";
 int windowWidth  = 960;
 int windowHeight = 540;
 

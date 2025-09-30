@@ -5,7 +5,7 @@ echo "Setting up compile command and flags"
 # Compiler und Flags setzen
 compiler="g++"
 FLAGS=""
-exeName="BattleCatsLike"
+exeName="Furfront"
 
 # Alle benötigten SDL3-Module sowie Abhängigkeiten verlinken
 linkingFlags="-lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_rtf -lSDL3_ttf "
