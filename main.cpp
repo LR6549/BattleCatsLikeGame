@@ -416,7 +416,6 @@ void initState() {
 //* Update function (game logic per frame)
 void update(int deltaTime) {
     initState();
-    updateMixerGain(); //! change to only when volume settings touched
 
     switch (currentState) {
         case STATE::TITLESCREEN: {
@@ -752,6 +751,7 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
 //* Handle mouse input events
 void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
     if (mouse.button == SDL_BUTTON_LEFT) {
+        bool updateVolume = false;
 
         float mouseX = mouse.x * scaleMousePositionFactorX;
         float mouseY = mouse.y * scaleMousePositionFactorY;
@@ -849,6 +849,9 @@ void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
                 // Optional: handle unknown/invalid state
                 break;
             }
+        }
+        if (updateVolume) {
+            updateMixerGain();
         }
     }
 }
