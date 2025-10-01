@@ -11,8 +11,7 @@ exeName="Furfront"
 linkingFlags="-lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_rtf -lSDL3_ttf "
 
 # Include- und Library-Pfade setzen
-lAndIPaths="-I./include -I/home/lr6549/Dropbox/CPP_LIBARIES/linux/include/ \
--L/home/lr6549/Dropbox/CPP_LIBARIES/linux/lib/"
+lAndIPaths="-I./include -I"F:/Dropbox/Dropbox/CPP_LIBARIES/hppLibs" -I/home/lr6549/Dropbox/CPP_LIBARIES/linux/include/ -L/home/lr6549/Dropbox/CPP_LIBARIES/linux/lib/"
 
 # Compile-Command
 compileCommand="$compiler main.cpp -o ${exeName}.exe $lAndIPaths $linkingFlags"

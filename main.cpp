@@ -14,6 +14,7 @@
 #include <JFLX/logging.hpp>
 #include <JFLX/jsonFunctionality.hpp>
 #include <JFLX/collision.hpp>
+#include "mouseButtons.hpp"
 #include "buttonStruct.hpp"
 #include "colorStruct.hpp"
 
@@ -413,13 +414,64 @@ void initState() {
     }
 }
 
+//* Updates all mouse data variables like position and states
+void updateMouseData() {
+    SDL_MouseButtonFlags btn = SDL_GetMouseState(&mouseX, &mouseY);
+
+    mouseX *= scaleMousePositionFactorX;
+    mouseY *= scaleMousePositionFactorY;
+
+    if (btn == SDL_BUTTON_LEFT) {
+        if (mouseButtons.at("left")) {
+            mouseButtons["holdingLeft"] = true;
+        } else {
+            mouseButtons["left"] = true;
+            mouseButtons["holdingLeft"] = false;
+        }
+    } else {
+            mouseButtons["left"] = false;
+    }
+    if (btn == SDL_BUTTON_MIDDLE) {
+        if (mouseButtons.at("middle")) {
+            mouseButtons["holdingMiddle"] = true;
+        } else {
+            mouseButtons["middle"] = true;
+            mouseButtons["holdingMiddle"] = false;
+        }
+    } else {
+            mouseButtons["middle"] = false;
+    }
+    if (btn == SDL_BUTTON_RIGHT) {
+        if (mouseButtons.at("middle")) {
+            mouseButtons["holdingRight"] = true;
+        } else {
+            mouseButtons["right"] = true;
+            mouseButtons["holdingRight"] = false;
+        }
+    } else {
+            mouseButtons["right"] = false;
+    }
+}
+
 //* Update function (game logic per frame)
 void update(int deltaTime) {
     initState();
+    updateMouseData();
+
+    bool updateVolume = false;
 
     switch (currentState) {
         case STATE::TITLESCREEN: {
             // TODO: title screen logic
+            if (buttonMap.at("TitleScreenPlay")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                currentState = STATE::MAINMENU;
+            } else if (buttonMap.at("TitleScreenSettings")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                currentState = STATE::SETTINGS;
+            } else if (buttonMap.at("TitleScreenQuit")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                SDL_Event e;
+                e.type = SDL_EVENT_QUIT;
+                SDL_PushEvent(&e);
+            }
             break;
         }
         case STATE::MAINMENU: {
@@ -428,6 +480,39 @@ void update(int deltaTime) {
         }
         case STATE::SETTINGS: {
             // TODO: main menu logic
+            if (buttonMap.at("SettingsMusicPlus")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                if (settings["volume"]["music"].get<int>() >= 200) {
+                    settings["volume"]["music"] = 200;
+                } else {
+                    settings["volume"]["music"] = settings["volume"]["music"].get<int>() + 5;
+                }
+                updateVolume = true;
+            } else if (buttonMap.at("SettingsMusicMinus")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                if (settings["volume"]["music"].get<int>() <= 0) {
+                    settings["volume"]["music"] = 0;
+                } else {
+                    settings["volume"]["music"] = settings["volume"]["music"].get<int>() - 5;
+                }
+                updateVolume = true;
+            } else if (buttonMap.at("SettingsSFXPlus")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                if (settings["volume"]["sfx"].get<int>() >= 200) {
+                    settings["volume"]["sfx"] = 200;
+                } else {
+                    settings["volume"]["sfx"] = settings["volume"]["sfx"].get<int>() + 5;
+                }
+                updateVolume = true;
+            } else if (buttonMap.at("SettingsSFXMinus")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                if (settings["volume"]["sfx"].get<int>() <= 0) {
+                    settings["volume"]["sfx"] = 0;
+                } else {
+                    settings["volume"]["sfx"] = settings["volume"]["sfx"].get<int>() - 5;
+                }
+                updateVolume = true;
+            }
+            buttonMap.at("SettingsMusicPlus")->render();
+            buttonMap.at("SettingsMusicMinus")->render();
+            buttonMap.at("SettingsSFXPlus")->render();
+            buttonMap.at("SettingsSFXMinus")->render();
             break;
         }
         case STATE::LOADOUTSELECT: {
@@ -471,6 +556,10 @@ void update(int deltaTime) {
             // Optional: handle unknown/invalid state
             break;
         }
+    }
+    
+    if (updateVolume) {
+        updateMixerGain();
     }
 }
 
@@ -750,108 +839,62 @@ void handleKeyboardInput(const SDL_KeyboardEvent& key) {
 
 //* Handle mouse input events
 void handleMouseInput(const SDL_MouseButtonEvent& mouse) {
-    if (mouse.button == SDL_BUTTON_LEFT) {
-        bool updateVolume = false;
 
-        float mouseX = mouse.x * scaleMousePositionFactorX;
-        float mouseY = mouse.y * scaleMousePositionFactorY;
 
-        JFLX::log("Left Click at:", (std::to_string(mouseX) + ", " + std::to_string(mouseY)), JFLX::LOGTYPE::INFO);
+    JFLX::log("Left Click at:", (std::to_string(mouseX) + ", " + std::to_string(mouseY)), JFLX::LOGTYPE::INFO);
 
-        switch (currentState) {
-            case STATE::TITLESCREEN: {
-                // TODO: title screen logic
-                if (buttonMap.at("TitleScreenPlay")->isPressed(mouseX, mouseY)) {
-                    currentState = STATE::MAINMENU;
-                } else if (buttonMap.at("TitleScreenSettings")->isPressed(mouseX, mouseY)) {
-                    currentState = STATE::SETTINGS;
-                } else if (buttonMap.at("TitleScreenQuit")->isPressed(mouseX, mouseY)) {
-                    SDL_Event e;
-                    e.type = SDL_EVENT_QUIT;
-                    SDL_PushEvent(&e);
-                }
-                break;
-            }
-            case STATE::MAINMENU: {
-                // TODO: main menu logic
-                break;
-            }
-            case STATE::SETTINGS: {
-                // TODO: main menu logic
-                if (buttonMap.at("SettingsMusicPlus")->isPressed(mouseX, mouseY)) {
-                    if (settings["volume"]["music"].get<int>() >= 200) {
-                        settings["volume"]["music"] = 200;
-                    } else {
-                        settings["volume"]["music"] = settings["volume"]["music"].get<int>() + 5;
-                    }
-                } else if (buttonMap.at("SettingsMusicMinus")->isPressed(mouseX, mouseY)) {
-                    if (settings["volume"]["music"].get<int>() <= 0) {
-                        settings["volume"]["music"] = 0;
-                    } else {
-                        settings["volume"]["music"] = settings["volume"]["music"].get<int>() - 5;
-                    }
-                } else if (buttonMap.at("SettingsSFXPlus")->isPressed(mouseX, mouseY)) {
-                    if (settings["volume"]["sfx"].get<int>() >= 200) {
-                        settings["volume"]["sfx"] = 200;
-                    } else {
-                        settings["volume"]["sfx"] = settings["volume"]["sfx"].get<int>() + 5;
-                    }
-                } else if (buttonMap.at("SettingsSFXMinus")->isPressed(mouseX, mouseY)) {
-                    if (settings["volume"]["sfx"].get<int>() <= 0) {
-                        settings["volume"]["sfx"] = 0;
-                    } else {
-                        settings["volume"]["sfx"] = settings["volume"]["sfx"].get<int>() - 5;
-                    }
-                }
-                buttonMap.at("SettingsMusicPlus")->render();
-                buttonMap.at("SettingsMusicMinus")->render();
-                buttonMap.at("SettingsSFXPlus")->render();
-                buttonMap.at("SettingsSFXMinus")->render();
-                break;
-            }
-            case STATE::LOADOUTSELECT: {
-                // TODO: loadout select logic
-                break;
-            }
-            case STATE::UPGRADEUNIT: {
-                // TODO: upgrade unit logic
-                break;
-            }
-            case STATE::WORLDSELECT: {
-                // TODO: world select logic
-                break;
-            }
-            case STATE::LEVELSELECT: {
-                // TODO: level select logic
-                break;
-            }
-            case STATE::LEVELPLAY: {
-                // TODO: level play logic
-                break;
-            }
-            case STATE::BANNERSELECT: {
-                // TODO: banner select logic
-                break;
-            }
-            case STATE::ROLLBANNER: {
-                // TODO: roll banner logic
-                break;
-            }
-            case STATE::STORAGEUNITS: {
-                // TODO: storage units logic
-                break;
-            }
-            case STATE::STORAGEMATERIAL: {
-                // TODO: storage material logic
-                break;
-            }
-            default: {
-                // Optional: handle unknown/invalid state
-                break;
-            }
+    switch (currentState) {
+        case STATE::TITLESCREEN: {
+            // TODO: title screen logic
+            break;
         }
-        if (updateVolume) {
-            updateMixerGain();
+        case STATE::MAINMENU: {
+            // TODO: main menu logic
+            break;
+        }
+        case STATE::SETTINGS: {
+            // TODO: main menu logic
+            break;
+        }
+        case STATE::LOADOUTSELECT: {
+            // TODO: loadout select logic
+            break;
+        }
+        case STATE::UPGRADEUNIT: {
+            // TODO: upgrade unit logic
+            break;
+        }
+        case STATE::WORLDSELECT: {
+            // TODO: world select logic
+            break;
+        }
+        case STATE::LEVELSELECT: {
+            // TODO: level select logic
+            break;
+        }
+        case STATE::LEVELPLAY: {
+            // TODO: level play logic
+            break;
+        }
+        case STATE::BANNERSELECT: {
+            // TODO: banner select logic
+            break;
+        }
+        case STATE::ROLLBANNER: {
+            // TODO: roll banner logic
+            break;
+        }
+        case STATE::STORAGEUNITS: {
+            // TODO: storage units logic
+            break;
+        }
+        case STATE::STORAGEMATERIAL: {
+            // TODO: storage material logic
+            break;
+        }
+        default: {
+            // Optional: handle unknown/invalid state
+            break;
         }
     }
 }

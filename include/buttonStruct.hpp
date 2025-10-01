@@ -20,8 +20,12 @@ struct Button {
     std::string b_buttonName;
     std::string b_textureName;
 
+    bool hovered = false;
+
     float b_x = 0.0f, b_y = 0.0f;
     float b_w = 0.0f, b_h = 0.0f;
+
+    int tick = 0;
 
     Button(std::string textureName, float x, float y, std::string buttonName = "") {
         b_buttonName = buttonName;
@@ -29,32 +33,45 @@ struct Button {
         b_x = x;
         b_y = y;
 
+        //* check for Textures in map
         auto it = textureMap.find(textureName);
         if (it == textureMap.end()) {
-            log("Texture not found: ", textureName, LOGTYPE::ERROR);
+            JFLX::log("Texture not found: ", textureName, JFLX::LOGTYPE::ERROR);
             return;
         }
         SDL_Texture* tex = it->second;
 
         if (!SDL_GetTextureSize(tex, &b_w, &b_h)) {
-            log("ERROR Button Texture Size: ", "Could not get Button Texture Size!", LOGTYPE::ERROR);
+            JFLX::log("ERROR Button Texture Size: ", "Could not get Button Texture Size!", JFLX::LOGTYPE::ERROR);
         } else {
-            log("BUTTON SIZE: ", (std::to_string(b_w) + ", " + std::to_string(b_h)), LOGTYPE::INFO);
+            JFLX::log("BUTTON SIZE: ", (std::to_string(b_w) + ", " + std::to_string(b_h)), JFLX::LOGTYPE::INFO);
+        }
+
+        it = textureMap.find((textureName+"H"));
+        if (it == textureMap.end()) {
+            JFLX::log("Texture not found: ", textureName+"H", JFLX::LOGTYPE::ERROR);
+            return;
         }
     }
 
-    bool isPressed(float mouseX, float mouseY) {
-        bool pressed = aabb::inBounds(b_x, b_y, b_w, b_h, mouseX, mouseY);
+    bool isHovered(float mouseX, float mouseY) {
+        tick ++;
+        hovered = JFLX::aabb::inBounds(b_x, b_y, b_w, b_h, mouseX, mouseY);
 
-        if (pressed) {
-            log("Pressed Button: ", b_buttonName, LOGTYPE::INFO);
+        if (hovered && tick > 60) {
+            tick = 0;
+            JFLX::log("Hovered Button: ", b_buttonName, JFLX::LOGTYPE::INFO);
         }
 
-        return pressed;
+        return hovered;
     }
 
     void render() {
-        drawTexture(b_textureName, b_x, b_y, false);
+        if (hovered) {
+            drawTexture((b_textureName+"H"), b_x, b_y, false);
+        } else {
+            drawTexture(b_textureName, b_x, b_y, false);
+        }
     }
 };
 
