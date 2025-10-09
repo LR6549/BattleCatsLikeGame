@@ -1,0 +1,14 @@
+Default
+-------------
+Button Style:
+Thickness: 5
+Corner Size: 20
+Text Size: 56
+Font: Winterlemon
+
+Overlayed Textures: Crystalyze (Size 8, Quality 2)
+
+
+Highlight
+--------------
+Shadow: Radius (5,7), Distance (4,9), Angle (-120), Coverage (0,75)

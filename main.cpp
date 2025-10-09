@@ -132,7 +132,9 @@ void setUpButtons() {
     buttonMap.emplace("TitleScreenQuit",     std::make_unique<Button>("titleScreenQuitBTN", 737.0f, 740.0f, "TitleScreenQuit"));
 
     //* MAIN MENU
-
+    buttonMap.emplace("MainMenuPlay",     std::make_unique<Button>("mainMenuPlay", 100.0f, 255.0f, "MainMenuPlay"));
+    buttonMap.emplace("MainMenuLoadout", std::make_unique<Button>("mainMenuLoadout", 100.0f, 412.0f, "MainMenuLoadout"));
+    buttonMap.emplace("MainMenuUpgrade",     std::make_unique<Button>("mainMenuUpgrade", 100.0f, 569.0f, "MainMenuUpgrade"));
 
     //* SETTINGS
     buttonMap.emplace("SettingsMusicPlus",  std::make_unique<Button>("SettingsMusicPlusBTN", 407.0f, 418.0f, "SettingsMusicPlus"));
@@ -463,6 +465,17 @@ void update(int deltaTime) {
     switch (currentState) {
         case STATE::TITLESCREEN: {
             // TODO: title screen logic
+            if (buttonMap.at("MainMenuPlay")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                currentState = STATE::WORLDSELECT;
+            } else if (buttonMap.at("MainMenuLoadout")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                currentState = STATE::LOADOUTSELECT;
+            } else if (buttonMap.at("MainMenuUpgrade")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
+                currentState = STATE::UPGRADEUNIT;
+            }
+            break;
+        }
+        case STATE::MAINMENU: {
+            // TODO: main menu logic
             if (buttonMap.at("TitleScreenPlay")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
                 currentState = STATE::MAINMENU;
             } else if (buttonMap.at("TitleScreenSettings")->isHovered(mouseX, mouseY) && (mouseButtons.at("left") && !mouseButtons.at("holdingLeft"))) {
@@ -472,10 +485,6 @@ void update(int deltaTime) {
                 e.type = SDL_EVENT_QUIT;
                 SDL_PushEvent(&e);
             }
-            break;
-        }
-        case STATE::MAINMENU: {
-            // TODO: main menu logic
             break;
         }
         case STATE::SETTINGS: {
@@ -672,7 +681,7 @@ void render() {
     switch (currentState) {
         case STATE::TITLESCREEN: {
             // TODO: title screen logic
-            drawTexture("mainMenuBackground");
+            drawTexture("titleScreenBackground");
             buttonMap.at("TitleScreenPlay")->render();
             buttonMap.at("TitleScreenSettings")->render();
             buttonMap.at("TitleScreenQuit")->render();
@@ -680,6 +689,13 @@ void render() {
         }
         case STATE::MAINMENU: {
             // TODO: main menu logic
+            drawTexture("mainMenuBackground");
+
+            //! Render World Based On Completion State
+
+            buttonMap.at("MainMenuPlay")->render();
+            buttonMap.at("MainMenuLoadout")->render();
+            buttonMap.at("MainMenuUpgrade")->render();
             break;
         }
         case STATE::SETTINGS: {
