@@ -20,7 +20,7 @@
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
-json settings;
+json settings, progress;
 
 std::string path = fs::current_path().string() + "/";
 
@@ -246,6 +246,11 @@ int loadTextures() {
     return 0;
 }
 
+//* return the current state of completion (data/background/menu/completion)
+std::string getCompletionState() {
+    return "cS0";
+}
+
 //* Updates the mouse Scales if window size changed!
 void updateMouseScale() {
     int currentWindowW, currentWindowH;
@@ -355,6 +360,7 @@ void initState() {
             }
             case STATE::MAINMENU: {
                 playMusic("baseTheme");
+                progress["completionState"] = getCompletionState();
                 // TODO: main menu logic
                 break;
             }
@@ -691,7 +697,7 @@ void render() {
             // TODO: main menu logic
             drawTexture("mainMenuBackground");
 
-            //! Render World Based On Completion State
+            drawTexture(progress["completionState"].get<std::string>());
 
             buttonMap.at("MainMenuPlay")->render();
             buttonMap.at("MainMenuLoadout")->render();
@@ -1033,6 +1039,10 @@ int main(int argc, char* argv[]) {
     
     //* load config, assets and general set up calls
     if (!JFLX::loadJson(path + "/data/config/settings.json", settings)) {
+        cleanUp();
+        return 1;
+    }
+    if (!JFLX::loadJson(path + "/data/stats/progress.json", progress)) {
         cleanUp();
         return 1;
     }

@@ -1,0 +1,11 @@
+{
+    "completionState":"cS0",
+    "world" : {
+        "levels" : {
+            "0": {
+                "completed":false,
+                "claimed":false
+            }
+        }
+    }
+}
