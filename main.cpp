@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <cmath>
 #include <nlohmann/json.hpp>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL3_image/SDL_image.h>
@@ -75,6 +76,10 @@ STATE lastState     = STATE::NONE;
 
 float scaleMousePositionFactorX = 2.0f;
 float scaleMousePositionFactorY = 2.0f;
+
+std::unordered_map<std::string, float> frameMap = {
+    {"backgroundPlanetSpin", 0.0f}
+};
 
 //* Returns the name of the given State
 std::string getStateName(STATE& pState) {
@@ -461,10 +466,20 @@ void updateMouseData() {
     }
 }
 
+//* Update FrameMap
+void updateFrameMap(float deltaTime) {
+    for (auto& [key, value] : frameMap) {
+        value += deltaTime * 2;
+    }
+}
+
 //* Update function (game logic per frame)
-void update(int deltaTime) {
+void update(float deltaTime) {
+    //! JFLX::log("DeltaTime Update: ", std::to_string(deltaTime), JFLX::LOGTYPE::INFO);
+    
     initState();
     updateMouseData();
+    updateFrameMap(deltaTime);
 
     bool updateVolume = false;
 
@@ -697,6 +712,8 @@ void render() {
             // TODO: main menu logic
             drawTexture("mainMenuBackground");
 
+            drawTexture("planetSpin" + std::to_string(static_cast<int>(std::fmod(frameMap.at("backgroundPlanetSpin"), 15.0f))));
+
             drawTexture(progress["completionState"].get<std::string>());
 
             buttonMap.at("MainMenuPlay")->render();
@@ -927,7 +944,7 @@ void cleanUp() {
 
     //* Save Json's
     if (JFLX::saveJson((path+"/data/config/settings.json"), settings)) {
-        JFLX::log("Saved Json", "Successfully Saved Settings.json", JFLX::LOGTYPE::SUCCESS);
+        JFLX::log("Saved Json: ", "Successfully Saved Settings.json", JFLX::LOGTYPE::SUCCESS);
     }
 
     //* Cleanup textures

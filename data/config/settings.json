@@ -2,7 +2,7 @@
     "frameRate": 144,
     "fullscreen": false,
     "volume": {
-        "music": 70,
+        "music": 5,
         "sfx": 50
     }
 }
