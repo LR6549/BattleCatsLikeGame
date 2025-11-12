@@ -27,10 +27,14 @@ json settings, progress;
 
 std::string path = fs::current_path().string() + "/";
 
-//* Window Variables
+//* Window / Mouse / Audio Variables
 SDL_Window*     window = nullptr;
 SDL_Renderer*   renderer = nullptr;
 SDL_Texture*    renderTexture = nullptr;
+
+float scaleMousePositionFactorX = 2.0f;
+float scaleMousePositionFactorY = 2.0f;
+
 MIX_Mixer*      musicMixer = nullptr;
 MIX_Mixer*      soundMixer = nullptr;
 MIX_Track*      musicTrack = nullptr;
@@ -54,7 +58,7 @@ std::unordered_map<std::string, MIX_Audio*> musicMap;
 
 std::unordered_map<std::string, std::unique_ptr<Button>> buttonMap;
 
-//* Game STATE
+//* Game STATES
 enum class STATE {
     NONE,
     TITLESCREEN,
@@ -75,9 +79,6 @@ bool isPaused = false;
 
 STATE currentState  = STATE::TITLESCREEN;
 STATE lastState     = STATE::NONE;
-
-float scaleMousePositionFactorX = 2.0f;
-float scaleMousePositionFactorY = 2.0f;
 
 int currentCompletionState = 0;
 std::string completionPercent = "0";
