@@ -20,18 +20,20 @@ struct Button {
     std::string b_buttonName;
     std::string b_textureName;
 
-    bool hovered = false;
+    bool b_hovered = false;
+    bool b_sfx     = true;
 
     float b_x = 0.0f, b_y = 0.0f;
     float b_w = 0.0f, b_h = 0.0f;
 
-    int tick = 0;
+    int b_tick = 0;
 
-    Button(std::string textureName, float x, float y, std::string buttonName = "") {
+    Button(std::string textureName, float x, float y, std::string buttonName = "", float hasSFX = true) {
         b_buttonName = buttonName;
         b_textureName = textureName;
         b_x = x;
         b_y = y;
+        b_sfx = hasSFX;
 
         //* check for Textures in map
         auto it = textureMap.find(textureName);
@@ -55,19 +57,28 @@ struct Button {
     }
 
     bool isHovered(float mouseX, float mouseY) {
-        tick ++;
-        hovered = JFLX::aabb::inBounds(b_x, b_y, b_w, b_h, mouseX, mouseY);
+        b_tick ++;
+        bool prevHovered = b_hovered;
+        b_hovered = JFLX::aabb::inBounds(b_x, b_y, b_w, b_h, mouseX, mouseY);
 
-        if (hovered && tick > 60) {
-            tick = 0;
-            JFLX::log("Hovered Button: ", b_buttonName, JFLX::LOGTYPE::INFO);
+        if (b_sfx && b_hovered && !prevHovered) {
+            JFLX::log("Started Hovering Button: ", b_buttonName, JFLX::LOGTYPE::INFO);
+            playSound("hover");
         }
 
-        return hovered;
+        if (!b_hovered && prevHovered) {
+            JFLX::log("Ended Hovering Button: ", b_buttonName, JFLX::LOGTYPE::INFO);
+        }
+
+        if (b_hovered && b_tick > 60) {
+            b_tick = 0;
+        }
+
+        return b_hovered;
     }
 
     void render() {
-        if (hovered) {
+        if (b_hovered) {
             drawTexture((b_textureName+"H"), b_x, b_y, false);
         } else {
             drawTexture(b_textureName, b_x, b_y, false);

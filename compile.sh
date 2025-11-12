@@ -7,8 +7,9 @@ compiler="g++"
 FLAGS=""
 exeName="Furfront"
 
+#! Statische Verlinkung erzwingen (bei fehlern ggf. -static weglassen)
 # Alle benötigten SDL3-Module sowie Abhängigkeiten verlinken
-linkingFlags="-lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_rtf -lSDL3_ttf "
+linkingFlags="-static -lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_rtf -lSDL3_ttf "
 
 # Include- und Library-Pfade setzen
 lAndIPaths="-I./include -I"F:/Dropbox/Dropbox/CPP_LIBARIES/hppLibs" -I/home/lr6549/Dropbox/CPP_LIBARIES/linux/include/ -L/home/lr6549/Dropbox/CPP_LIBARIES/linux/lib/"

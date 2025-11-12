@@ -1,3 +1,5 @@
+//_ FURFRONT MAIN CPP FILE _//_ COPYRIGHT (C) 2024 JFLX STUDIO - ALL RIGHTS RESERVED _//
+
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -76,6 +78,9 @@ STATE lastState     = STATE::NONE;
 
 float scaleMousePositionFactorX = 2.0f;
 float scaleMousePositionFactorY = 2.0f;
+
+int currentCompletionState = 0;
+std::string completionPercent = "0";
 
 std::unordered_map<std::string, float> frameMap = {
     {"backgroundPlanetSpin", 0.0f}
@@ -189,9 +194,9 @@ int loadMusic() {
     return 0;
 }
 
-//* Load all sound effects from "data/sounds/" into soundMap
+//* Load all sound effects from "data/sfx/" into soundMap
 int loadSounds() {
-    std::string soundFolderPath = path + "data/sounds/";
+    std::string soundFolderPath = path + "data/sfx/";
 
     if (!fs::exists(soundFolderPath)) {
         JFLX::log("Sound folder does not exist: ", soundFolderPath.c_str());
@@ -251,45 +256,6 @@ int loadTextures() {
     return 0;
 }
 
-//* return the current state of completion (data/background/menu/completion)
-std::string getCompletionState() {
-    return "cS0";
-}
-
-//* Updates the mouse Scales if window size changed!
-void updateMouseScale() {
-    int currentWindowW, currentWindowH;
-    SDL_GetWindowSize(window, &currentWindowW, &currentWindowH);
-
-    if (currentWindowW != windowWidth || currentWindowH != windowHeight) {
-        //! Change to Log
-        // std::cout << "Window Resolution Was Changed! From: "
-        //           << widthOld << "," << heightOld
-        //           << "; To: "
-        //           << windowW << "," << windowH << "\n";
-        
-        float scaleX = static_cast<float>(currentWindowW) / 960.0f;
-        float scaleY = static_cast<float>(currentWindowH) / 540.0f;
-        scaleMousePositionFactorX = 2.0f / scaleX;
-        scaleMousePositionFactorY = 2.0f / scaleY;
-        
-        //! Change to Log
-        // std::cout << "New Scales: " << scaleX << "," << scaleY
-        //           << " for mouse: " << scaleXMouse << "," << scaleYMouse << "\n";
-        
-        windowWidth = currentWindowW;
-        windowHeight = currentWindowH;
-    }
-}
-
-//* Updates the music and sound mixer gain based on the settings
-void updateMixerGain() {
-    //* Updating music Mixer Gain
-    MIX_SetMasterGain(musicMixer, settings["volume"]["music"].get<int>()/100.0f);
-    //* Updating sound Mixer Gain
-    MIX_SetMasterGain(soundMixer, settings["volume"]["sfx"].get<int>()/100.0f);
-}
-
 //* Play a sound effect by name
 void playSound(const std::string& soundName) {
     //* check if sound Exists
@@ -300,7 +266,7 @@ void playSound(const std::string& soundName) {
     }
     MIX_Audio* audio = it->second;
 
-    if (!MIX_PlayAudio(soundMixer, audio)) {
+    if (MIX_PlayAudio(soundMixer, audio)) {
         JFLX::log("Played sound: ", soundName.c_str());
     } else {
         JFLX::log("MIX_PlayAudio failed: ", SDL_GetError());
@@ -354,6 +320,21 @@ static void playMusic(std::string musicName) {
     SDL_DestroyProperties(options);
 }
 
+//* return the current state of completion (data/background/menu/completion)
+std::string getCompletionPercent() {
+    if (currentCompletionState < 250) {
+        return "0";
+    } else if (currentCompletionState < 500) {
+        return "25";
+    } else if (currentCompletionState < 1000) {
+        return "50";
+    } else if (currentCompletionState < 2500) {
+        return "75";
+    } else {
+        return "100";
+    }
+}
+
 //* Initialisation of a new game State
 void initState() {
     if (lastState != currentState) {
@@ -365,7 +346,6 @@ void initState() {
             }
             case STATE::MAINMENU: {
                 playMusic("baseTheme");
-                progress["completionState"] = getCompletionState();
                 // TODO: main menu logic
                 break;
             }
@@ -425,6 +405,40 @@ void initState() {
         
         lastState = currentState;
     }
+}
+
+//* Updates the mouse Scales if window size changed!
+void updateMouseScale() {
+    int currentWindowW, currentWindowH;
+    SDL_GetWindowSize(window, &currentWindowW, &currentWindowH);
+
+    if (currentWindowW != windowWidth || currentWindowH != windowHeight) {
+        //! Change to Log
+        // std::cout << "Window Resolution Was Changed! From: "
+        //           << widthOld << "," << heightOld
+        //           << "; To: "
+        //           << windowW << "," << windowH << "\n";
+        
+        float scaleX = static_cast<float>(currentWindowW) / 960.0f;
+        float scaleY = static_cast<float>(currentWindowH) / 540.0f;
+        scaleMousePositionFactorX = 2.0f / scaleX;
+        scaleMousePositionFactorY = 2.0f / scaleY;
+        
+        //! Change to Log
+        // std::cout << "New Scales: " << scaleX << "," << scaleY
+        //           << " for mouse: " << scaleXMouse << "," << scaleYMouse << "\n";
+        
+        windowWidth = currentWindowW;
+        windowHeight = currentWindowH;
+    }
+}
+
+//* Updates the music and sound mixer gain based on the settings
+void updateMixerGain() {
+    //* Updating music Mixer Gain
+    MIX_SetMasterGain(musicMixer, settings["volume"]["music"].get<int>()/100.0f);
+    //* Updating sound Mixer Gain
+    MIX_SetMasterGain(soundMixer, settings["volume"]["sfx"].get<int>()/100.0f);
 }
 
 //* Updates all mouse data variables like position and states
@@ -712,9 +726,10 @@ void render() {
             // TODO: main menu logic
             drawTexture("mainMenuBackground");
 
-            drawTexture("planetSpin" + std::to_string(static_cast<int>(std::fmod(frameMap.at("backgroundPlanetSpin"), 15.0f))));
+            completionPercent = getCompletionPercent();
+            std::string tempPlanetFrame = "planetSpin" + completionPercent + "Percent" + std::to_string(static_cast<int>(std::fmod(frameMap.at("backgroundPlanetSpin"), 15.0f)));
 
-            drawTexture(progress["completionState"].get<std::string>());
+            drawTexture(tempPlanetFrame, 780.0f, 310.0f);
 
             buttonMap.at("MainMenuPlay")->render();
             buttonMap.at("MainMenuLoadout")->render();
@@ -989,6 +1004,11 @@ void cleanUp() {
     SDL_Quit();
 }
 
+//* Saving Progress, Settings, etc.
+void save() {
+    progress["completionState"] = currentCompletionState;
+}
+
 int main(int argc, char* argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         JFLX::log("SDL_Init Error: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
@@ -1027,7 +1047,15 @@ int main(int argc, char* argv[]) {
     // Create a musicMixer attached to the default playback device (let SDL decide format)
     musicMixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
     if (!musicMixer) {
-        JFLX::log("MIX_CreateMixerDevice failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
+        JFLX::log("MIX_CreateMixerDevice (Music) failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
+        cleanUp();
+        return 1;
+    }
+
+    // Create a musicMixer attached to the default playback device (let SDL decide format)
+    soundMixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
+    if (!soundMixer) {
+        JFLX::log("MIX_CreateMixerDevice (SFX) failed: ", SDL_GetError(), JFLX::LOGTYPE::ERROR);
         cleanUp();
         return 1;
     }
@@ -1066,7 +1094,12 @@ int main(int argc, char* argv[]) {
     loadMusic();
     loadSounds();
     loadTextures();
+
     setUpButtons();
+
+    updateMixerGain();
+
+    currentCompletionState = progress["completionState"].get<int>();
     
     SDL_Event event;
     bool running    = true;
